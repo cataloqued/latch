@@ -30,7 +30,8 @@ Install Latch on a VPS, open the dashboard, and remotely:
 All without repeatedly working through a command-line interface.
 
 > [!IMPORTANT]
-> Your browser communicates directly with infrastructure you control. There is no Latch-hosted control plane sitting between you and your machines.
+> Latch works like this: your Host => the internet => your router => your device
+> None of your data goes through any Latch infrastructure, there isn't any.
 
 ---
 
@@ -40,7 +41,7 @@ All without repeatedly working through a command-line interface.
 npm install --global latchup
 ```
 
-Start the encrypted panel:
+Start the panel:
 
 ```bash
 latch up

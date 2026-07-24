@@ -1,0 +1,710 @@
+<title>Latch</title>
+<style>
+  :root {
+    --bg: #0a0e13; --panel: #0e141b; --panel-2: #0c1219; --rule: #1b2530;
+    --row-hover: #111922; --row-sel: #14202b; --text: #cdd6df; --dim: #5c6875; --faint: #38424e;
+    --green: #3fb950; --green-dk: #2ea043; --amber: #d29922; --red: #f85149; --cyan: #56b6c2;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: var(--mono); font-size: 14px; line-height: 1.5;
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  }
+  body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  ::selection { background: rgba(63, 185, 80, 0.25); }
+
+  .bar { flex: 0 0 auto; display: flex; align-items: center; gap: 1.5ch; padding: 10px 20px; border-bottom: 1px solid var(--rule); }
+  .brand { color: var(--green); font-weight: 600; letter-spacing: 0.08em; }
+  .brand::before { content: "▪ "; color: var(--green-dk); }
+  .nav { display: flex; gap: 2px; margin-left: 0.5ch; }
+  .navbtn { background: none; border: none; color: var(--dim); font: inherit; cursor: pointer; padding: 4px 10px; border-bottom: 2px solid transparent; }
+  .navbtn:hover { color: var(--text); }
+  .navbtn.active { color: var(--green); border-bottom-color: var(--green); }
+  .counts { color: var(--dim); display: flex; gap: 1.5ch; margin-left: 1ch; }
+  .counts b { color: var(--text); font-weight: 500; }
+  .counts .up b { color: var(--green); }
+  .counts .down b { color: var(--red); }
+  .bar .spacer { flex: 1; }
+  .barbtn { background: none; border: 1px solid var(--rule); color: var(--dim); font: inherit; cursor: pointer; padding: 4px 10px; display: inline-flex; gap: 1ch; align-items: center; }
+  .barbtn:hover { color: var(--text); border-color: var(--dim); }
+  .kbd-hint { color: var(--faint); }
+  .kbd-hint kbd { font: inherit; color: var(--dim); border: 1px solid var(--rule); padding: 0 0.6ch; }
+
+  .body { flex: 1 1 auto; display: flex; min-height: 0; }
+  .list { flex: 1 1 auto; overflow-y: auto; padding: 8px 0 16px; }
+  .detail { flex: 0 0 380px; border-left: 1px solid var(--rule); background: var(--panel-2); overflow-y: auto; display: flex; flex-direction: column; }
+
+  .host { padding: 0 20px; }
+  .host + .host { margin-top: 6px; }
+  .host-head { display: flex; align-items: baseline; gap: 1.5ch; padding: 14px 0 8px; border-bottom: 1px solid var(--rule); }
+  .host-name { color: var(--text); font-weight: 600; }
+  .host-meta { margin-left: auto; color: var(--dim); display: flex; gap: 1.5ch; }
+  .host-meta .role { color: var(--faint); text-transform: uppercase; letter-spacing: 0.06em; font-size: 12px; }
+  .host-meta .net { color: var(--cyan); opacity: 0.8; }
+  .host-online { color: var(--green); }
+
+  .rows { padding: 4px 0; }
+  .row { display: grid; grid-template-columns: 2.5ch 17ch 7ch 8ch 1fr 6ch 3ch; align-items: center; gap: 1ch; padding: 4px 8px; margin: 0 -8px; cursor: pointer; border-left: 2px solid transparent; }
+  .row:hover { background: var(--row-hover); }
+  .row.sel { background: var(--row-sel); border-left-color: var(--green); }
+  .row.sel .name { color: #fff; }
+  .marker { text-align: center; }
+  .name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .state { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .port { color: var(--cyan); opacity: 0.85; }
+  .detail-col { color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .restarts { color: var(--faint); text-align: right; }
+  .restarts.warn { color: var(--amber); }
+  .git-dot { color: var(--amber); }
+  .rowlog { opacity: 0; background: none; border: none; color: var(--dim); cursor: pointer; font: inherit; padding: 0; text-align: center; }
+  .row:hover .rowlog { opacity: 1; }
+  .rowlog:hover { color: var(--green); }
+
+  .s-run .marker, .s-run .state { color: var(--green); }
+  .s-stop .marker, .s-stop .state { color: var(--dim); }
+  .s-crash .marker, .s-crash .state { color: var(--red); }
+  .s-boot .marker, .s-boot .state { color: var(--amber); }
+  .s-crash .detail-col { color: var(--red); opacity: 0.75; }
+  .row.flash { animation: flash 0.5s ease-out; }
+  @keyframes flash { from { background: rgba(63,185,80,0.22); } to { background: var(--row-sel); } }
+
+  .d-head { padding: 18px 20px 14px; border-bottom: 1px solid var(--rule); }
+  .d-title { display: flex; align-items: baseline; gap: 1.5ch; }
+  .d-name { font-size: 18px; font-weight: 600; color: #fff; }
+  .d-status { margin-left: auto; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .d-host { color: var(--dim); margin-top: 4px; }
+  .d-host .net { color: var(--cyan); opacity: 0.8; }
+  .d-section { padding: 16px 20px; border-bottom: 1px solid var(--rule); }
+  .d-label { color: var(--faint); text-transform: uppercase; letter-spacing: 0.1em; font-size: 11px; margin-bottom: 12px; }
+
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 1ch; padding: 11px 12px; font: inherit; font-size: 14px; background: transparent; color: var(--text); border: 1px solid var(--rule); cursor: pointer; transition: background 0.12s, border-color 0.12s, color 0.12s; white-space: nowrap; }
+  .btn .g { font-size: 15px; }
+  .btn:hover { background: var(--row-hover); border-color: var(--dim); }
+  .btn:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+  .btn.primary { color: var(--green); border-color: rgba(63,185,80,0.4); }
+  .btn.primary:hover { background: rgba(63,185,80,0.12); border-color: var(--green); }
+  .btn.warn { color: var(--amber); border-color: rgba(210,153,34,0.4); }
+  .btn.warn:hover { background: rgba(210,153,34,0.12); border-color: var(--amber); }
+  .btn.danger { color: var(--red); border-color: rgba(248,81,73,0.35); }
+  .btn.danger:hover { background: rgba(248,81,73,0.12); border-color: var(--red); }
+  .btn.wide { grid-column: 1 / -1; }
+  .btn:disabled { color: var(--faint); border-color: var(--rule); cursor: default; background: none; }
+
+  .kv { display: grid; grid-template-columns: 8ch 1fr; gap: 4px 1.5ch; }
+  .kv dt { color: var(--dim); }
+  .kv dd { margin: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kv dd .hash { color: var(--cyan); }
+  .kv dd .sub { color: var(--dim); }
+  .behind { color: var(--amber); }
+  .behind.zero { color: var(--green); }
+  .no-repo { color: var(--dim); }
+  .link-form { display: flex; gap: 8px; margin-top: 12px; }
+  .link-form input { flex: 1; background: var(--bg); border: 1px solid var(--rule); color: var(--text); font: inherit; padding: 9px 10px; outline: none; min-width: 0; }
+  .link-form input:focus { border-color: var(--dim); }
+  .link-form input::placeholder { color: var(--faint); }
+
+  /* about */
+  .about { flex: 1 1 auto; overflow-y: auto; padding: 44px 20px; }
+  .about-inner { max-width: 620px; margin: 0 auto; }
+  .about h1 { font-size: 24px; color: var(--green); letter-spacing: 0.06em; margin: 0 0 6px; }
+  .about h1::before { content: "▪ "; color: var(--green-dk); }
+  .about .tag { color: var(--dim); margin: 0 0 32px; }
+  .about section { padding: 20px 0; border-top: 1px solid var(--rule); }
+  .about .lbl { color: var(--faint); text-transform: uppercase; letter-spacing: 0.1em; font-size: 11px; margin-bottom: 10px; }
+  .about p { margin: 0 0 8px; color: var(--text); }
+  .about .cyan { color: var(--cyan); }
+  .about .green { color: var(--green); }
+  .about .links { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+  .cmdline { flex: 0 0 auto; display: flex; align-items: center; gap: 1ch; padding: 11px 20px; border-top: 1px solid var(--rule); background: var(--panel); }
+  .prompt { color: var(--green); }
+  .cmdline input { flex: 1; background: none; border: none; outline: none; color: var(--text); font: inherit; caret-color: var(--green); }
+  .cmdline input::placeholder { color: var(--faint); }
+
+  .overlay { position: fixed; inset: 0; background: rgba(5, 8, 11, 0.72); display: none; z-index: 10; }
+  .overlay.show { display: block; }
+  .palette { position: absolute; top: 14vh; left: 50%; transform: translateX(-50%); width: min(560px, 92vw); background: var(--panel); border: 1px solid var(--rule); box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
+  .palette-input { display: flex; align-items: center; gap: 1ch; padding: 12px 16px; border-bottom: 1px solid var(--rule); }
+  .palette-input .prompt { color: var(--green); }
+  .palette-input input { flex: 1; background: none; border: none; outline: none; color: var(--text); font: inherit; caret-color: var(--green); }
+  .palette-list { max-height: 46vh; overflow-y: auto; }
+  .pcmd { display: flex; align-items: baseline; gap: 1.5ch; padding: 8px 16px; border-left: 2px solid transparent; cursor: pointer; }
+  .pcmd.sel { background: var(--row-sel); border-left-color: var(--green); }
+  .pcmd .key { color: var(--green); width: 9ch; }
+  .pcmd .desc { color: var(--text); }
+  .pcmd .arg { color: var(--dim); margin-left: auto; }
+
+  .keys-list { padding: 10px 0; }
+  .keyrow { display: grid; grid-template-columns: 13ch 1fr; gap: 1.5ch; padding: 6px 18px; }
+  .keyrow .k { color: var(--green); }
+  .keyrow .d { color: var(--dim); }
+
+  .logbox { position: absolute; inset: 6vh 6vw; background: var(--panel); border: 1px solid var(--rule); display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
+  .log-head { flex: 0 0 auto; display: flex; align-items: center; gap: 1.5ch; padding: 12px 18px; border-bottom: 1px solid var(--rule); }
+  .log-head .t { color: var(--green); font-weight: 600; }
+  .log-head .sub { color: var(--dim); }
+  .log-body { flex: 1 1 auto; overflow-y: auto; padding: 12px 18px; font-size: 13px; line-height: 1.6; }
+  .log-body .ln { display: flex; gap: 1.5ch; white-space: pre-wrap; }
+  .log-body .ts { color: var(--faint); flex: 0 0 auto; }
+  .log-body .lv { flex: 0 0 5ch; }
+  .lv-inf { color: var(--dim); } .lv-wrn { color: var(--amber); } .lv-err { color: var(--red); } .lv-ok { color: var(--green); }
+  .log-body .msg { color: var(--text); }
+
+  .toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 20; }
+  .toast { display: flex; align-items: center; gap: 1ch; padding: 10px 14px; background: var(--panel); border: 1px solid var(--rule); border-left-width: 2px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); animation: slidein 0.16s ease-out; }
+  .toast.ok { border-left-color: var(--green); } .toast.ok .g { color: var(--green); }
+  .toast.info { border-left-color: var(--cyan); } .toast.info .g { color: var(--cyan); }
+  .toast .g { flex: 0 0 auto; }
+  @keyframes slidein { from { transform: translateX(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  .list::-webkit-scrollbar, .detail::-webkit-scrollbar, .about::-webkit-scrollbar, .log-body::-webkit-scrollbar, .palette-list::-webkit-scrollbar { width: 10px; }
+  .list::-webkit-scrollbar-thumb, .detail::-webkit-scrollbar-thumb, .about::-webkit-scrollbar-thumb, .log-body::-webkit-scrollbar-thumb, .palette-list::-webkit-scrollbar-thumb { background: var(--rule); }
+
+  @media (max-width: 860px) {
+    .body { flex-direction: column; }
+    .detail { flex: 0 0 auto; border-left: none; border-top: 1px solid var(--rule); max-height: 50vh; }
+  }
+  @media (prefers-reduced-motion: reduce) { .row.flash, .toast { animation: none; } }
+</style>
+
+<div class="bar">
+  <span class="brand">latch</span>
+  <nav class="nav">
+    <button class="navbtn active" id="nav-fleet" onclick="showView('fleet')">fleet</button>
+    <button class="navbtn" id="nav-about" onclick="showView('about')">about</button>
+  </nav>
+  <span class="counts" id="counts">
+    <span><b id="c-hosts">0</b> hosts</span>
+    <span><b id="c-svc">0</b> svc</span>
+    <span class="up"><b id="c-up">0</b> up</span>
+    <span class="down"><b id="c-down">0</b> down</span>
+  </span>
+  <span class="spacer"></span>
+  <button class="barbtn" onclick="openKeys()"><span class="g">⌨</span> keys</button>
+  <span class="kbd-hint"><kbd>⌘K</kbd> commands</span>
+</div>
+
+<div class="body" id="view-fleet">
+  <div class="list" id="list"></div>
+  <div class="detail" id="detail"></div>
+</div>
+
+<div class="about" id="view-about" style="display:none">
+  <div class="about-inner">
+    <h1>latch</h1>
+    <p class="tag">A self-hosted panel to view and manage all your instances across systems.</p>
+
+    <section>
+      <div class="lbl">open source</div>
+      <p><span class="green">AGPL-3.0</span> · free forever · self-hosted only.</p>
+      <p>No Latch cloud. Your browser talks to your box — nothing passes through us, because there is no us to pass through.</p>
+    </section>
+
+    <section>
+      <div class="lbl">why it exists</div>
+      <p>PM2 is single-host. Portainer and Coolify are whole platforms. Latch is the missing middle — one panel over every VPS you own, runtime-agnostic, no third party in the loop.</p>
+    </section>
+
+    <section>
+      <div class="lbl">how trust works</div>
+      <p>If you can SSH into the box, you can control it. If you can't, you can't. Pairing is an SSH-gated one-time code — no passwords to leak.</p>
+    </section>
+
+    <section>
+      <div class="lbl">made by</div>
+      <p><span class="cyan">cataloqued</span></p>
+      <div class="links">
+        <button class="btn" onclick="window.open('https://github.com/cataloqued/latch','_blank')"><span class="g">↗</span> GitHub</button>
+        <button class="btn" onclick="window.open('https://github.com/cataloqued/latch/blob/main/LICENSE','_blank')"><span class="g">§</span> License</button>
+        <button class="btn" onclick="window.open('https://github.com/cataloqued/latch/blob/main/docs/DESIGN.md','_blank')"><span class="g">▤</span> Docs</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="cmdline">
+  <span class="prompt">$</span>
+  <input id="cmd" type="text" spellcheck="false" autocomplete="off" placeholder="restart api   ·   logs worker   ·   / to search" />
+  <span class="kbd-hint" style="white-space:nowrap"><kbd>?</kbd> keys · click a service</span>
+</div>
+
+<div class="overlay" id="ovPalette">
+  <div class="palette">
+    <div class="palette-input"><span class="prompt">›</span><input id="pInput" type="text" spellcheck="false" autocomplete="off" placeholder="type a command…" /></div>
+    <div class="palette-list" id="pList"></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovKeys">
+  <div class="palette" style="top:16vh">
+    <div class="palette-input"><span class="prompt">⌨</span><span style="color:var(--text)">keyboard</span><button class="btn" style="margin-left:auto;padding:4px 10px" onclick="closeKeys()">close <kbd>esc</kbd></button></div>
+    <div class="keys-list">
+      <div class="keyrow"><span class="k">j / k · ↑ / ↓</span><span class="d">move selection</span></div>
+      <div class="keyrow"><span class="k">r</span><span class="d">restart service</span></div>
+      <div class="keyrow"><span class="k">s</span><span class="d">stop / start service</span></div>
+      <div class="keyrow"><span class="k">l · ↵</span><span class="d">open logs</span></div>
+      <div class="keyrow"><span class="k">/</span><span class="d">search / command palette</span></div>
+      <div class="keyrow"><span class="k">⌘K · ⌃K</span><span class="d">command palette</span></div>
+      <div class="keyrow"><span class="k">?</span><span class="d">this help</span></div>
+      <div class="keyrow"><span class="k">q · esc</span><span class="d">close overlay</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovLogs">
+  <div class="logbox">
+    <div class="log-head"><span class="t">logs</span><span class="sub" id="logSub">api · vps-1.fra</span><button class="btn" style="margin-left:auto;padding:4px 10px" onclick="copyLogs()"><span class="g">⧉</span> copy <kbd>c</kbd></button><button class="btn" style="padding:4px 10px" onclick="closeLogs()"><span class="g">▤</span> close <kbd>q</kbd></button></div>
+    <div class="log-body" id="logBody"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+  const GLYPH = { run: "●", stop: "○", crash: "✕", boot: "◍" };
+  const SCLASS = { run: "s-run", stop: "s-stop", crash: "s-crash", boot: "s-boot" };
+  const SPIN = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
+  const $ = (id) => document.getElementById(id);
+  const POLL_MS = 2000;
+
+  let fleet = [];
+  let flat = [], sel = 0, currentView = "fleet";
+  let pending = new Set(); // "hostId:name" currently mid restart/reload (client-side only)
+  let gitCache = new Map(); // "hostId:name" -> git info (or null)
+  let selKey = null;
+
+  async function api(path, opts) {
+    const res = await fetch("/api" + path, {
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      ...opts,
+    });
+    if (res.status === 401) { location.href = "/pair"; throw new Error("unauthorized"); }
+    const text = await res.text();
+    const ct = res.headers.get("content-type") || "";
+    if (!res.ok) {
+      let msg = text;
+      try { msg = JSON.parse(text).error || msg; } catch {}
+      throw new Error(msg || res.statusText);
+    }
+    return ct.includes("application/json") ? (text ? JSON.parse(text) : null) : text;
+  }
+
+  function formatUptime(startedAt) {
+    if (!startedAt) return null;
+    const s = Math.floor((Date.now() - startedAt) / 1000);
+    if (s < 60) return s + "s";
+    const m = Math.floor(s / 60), h = Math.floor(m / 60), d = Math.floor(h / 24);
+    if (d > 0) return d + "d " + (h % 24) + "h";
+    if (h > 0) return h + "h " + (m % 60) + "m";
+    return m + "m " + (s % 60) + "s";
+  }
+
+  function toDisplayProc(raw, hostId) {
+    const key = hostId + ":" + raw.name;
+    let state = raw.status === "running" ? "run" : "stop";
+    if (raw.status === "stopped" && (raw.lastError || (raw.exitCode != null && raw.exitCode !== 0))) state = "crash";
+    if (pending.has(key)) state = "boot";
+    return {
+      name: raw.name,
+      state,
+      port: raw.port || null,
+      up: formatUptime(raw.startedAt),
+      restarts: raw.restarts || 0,
+      cmd: raw.command || "",
+      exit: raw.lastError || (raw.exitCode ? "exit " + raw.exitCode : null),
+      pid: raw.pid,
+    };
+  }
+
+  async function fetchFleet() {
+    const [hub, procs, agents] = await Promise.all([
+      api("/hub").catch(() => ({ hostname: "hub", address: "" })),
+      api("/processes"),
+      api("/agents").catch(() => []),
+    ]);
+    const hubHost = {
+      id: "hub", host: hub.hostname, role: "hub", net: hub.address || "",
+      online: true, remote: false,
+      procs: procs.map((p) => toDisplayProc(p, "hub")),
+    };
+    const agentHosts = agents.map((a) => ({
+      id: a.id, host: a.name, role: "agent", net: "",
+      online: a.online, remote: true,
+      procs: (a.processes || []).map((p) => toDisplayProc(p, a.id)),
+    }));
+    return [hubHost, ...agentHosts];
+  }
+
+  function rebuildFlat() {
+    flat = [];
+    fleet.forEach((h, hi) => h.procs.forEach((_, pi) => flat.push([hi, pi])));
+    if (!flat.length) { sel = 0; return; }
+    if (selKey != null) {
+      const idx = flat.findIndex(([hi, pi]) => fleet[hi].id + ":" + fleet[hi].procs[pi].name === selKey);
+      if (idx !== -1) { sel = idx; return; }
+    }
+    if (sel >= flat.length) sel = flat.length - 1;
+    if (sel < 0) sel = 0;
+  }
+  function selProc() { if (!flat.length) return null; const [hi, pi] = flat[sel]; return fleet[hi].procs[pi]; }
+  function selHost() { if (!flat.length) return null; return fleet[flat[sel][0]]; }
+  function detailText(p) {
+    if (p.state === "crash") return p.exit || "crashed";
+    if (p.state === "boot") return "restarting…";
+    if (p.state === "stop") return "—";
+    return p.up ? "up " + p.up : "—";
+  }
+
+  function showView(v) {
+    currentView = v;
+    $("view-fleet").style.display = v === "fleet" ? "flex" : "none";
+    $("view-about").style.display = v === "about" ? "block" : "none";
+    $("counts").style.visibility = v === "fleet" ? "visible" : "hidden";
+    $("nav-fleet").classList.toggle("active", v === "fleet");
+    $("nav-about").classList.toggle("active", v === "about");
+  }
+
+  function render() {
+    rebuildFlat();
+    const p = selProc();
+    selKey = p && selHost() ? selHost().id + ":" + p.name : null;
+    renderList();
+    renderDetail();
+    updateCounts();
+  }
+
+  function renderList() {
+    const fl = $("list");
+    fl.innerHTML = "";
+    if (!fleet.length || !fleet.some((h) => h.procs.length)) {
+      fl.innerHTML = '<div style="padding:40px 20px;color:var(--dim)">No processes yet. Add one with <span style="color:var(--text)">latch add &lt;name&gt; -- &lt;command&gt;</span>.</div>';
+      return;
+    }
+    let idx = 0;
+    fleet.forEach((h) => {
+      const host = document.createElement("div");
+      host.className = "host";
+      host.innerHTML =
+        '<div class="host-head"><span class="host-name">' + h.host + '</span>' +
+        '<span class="host-meta"><span class="role">' + h.role + '</span>' +
+        '<span class="host-online">' + (h.online ? "online" : "offline") + '</span>' +
+        (h.net ? '<span class="net">' + h.net + '</span>' : '') + '</span></div>';
+      const rows = document.createElement("div");
+      rows.className = "rows";
+      h.procs.forEach((p) => {
+        const myIdx = idx++;
+        const row = document.createElement("div");
+        row.className = "row " + SCLASS[p.state] + (myIdx === sel ? " sel" : "");
+        row.dataset.idx = myIdx;
+        const cached = gitCache.get(h.id + ":" + p.name);
+        const gitDot = (cached && cached.behind > 0) ? '<span class="git-dot" title="behind remote"> ⇣' + cached.behind + '</span>' : '';
+        row.innerHTML =
+          '<span class="marker">' + GLYPH[p.state] + '</span>' +
+          '<span class="name">' + p.name + gitDot + '</span>' +
+          '<span class="state">' + p.state + '</span>' +
+          '<span class="port">' + (p.port ? ":" + p.port : "") + '</span>' +
+          '<span class="detail-col">' + detailText(p) + '</span>' +
+          '<span class="restarts' + (p.restarts >= 5 ? " warn" : "") + '">↻ ' + p.restarts + '</span>' +
+          (h.remote ? '' : '<button class="rowlog" title="logs">▤</button>');
+        row.addEventListener("click", () => { sel = myIdx; render(); });
+        const logBtn = row.querySelector(".rowlog");
+        if (logBtn) logBtn.addEventListener("click", (e) => { e.stopPropagation(); sel = myIdx; render(); openLogs(); });
+        rows.appendChild(row);
+      });
+      host.appendChild(rows);
+      fl.appendChild(host);
+    });
+  }
+
+  function renderDetail() {
+    const p = selProc(), h = selHost();
+    if (!p) { $("detail").innerHTML = ""; return; }
+    const running = p.state === "run" || p.state === "boot";
+    const startStop = running
+      ? '<button class="btn warn" onclick="act(\'stop\')"><span class="g">⏹</span> Stop</button>'
+      : '<button class="btn primary" onclick="act(\'start\')"><span class="g">▶</span> Start</button>';
+    const key = h.id + ":" + p.name;
+
+    let git;
+    if (h.remote) {
+      git = '<div class="d-section"><div class="d-label">git</div><div class="no-repo">Not available for remote agents yet.</div></div>';
+    } else {
+      const cached = gitCache.get(key);
+      if (cached === undefined) {
+        git = '<div class="d-section" id="gitSection"><div class="d-label">git</div><div class="no-repo">Checking…</div></div>';
+        loadGit(key, p.name);
+      } else if (cached) {
+        const behindCls = cached.behind > 0 ? "behind" : "behind zero";
+        const behindTxt = cached.behind > 0 ? "⇣ " + cached.behind + " behind" : "✓ up to date";
+        git =
+          '<div class="d-section" id="gitSection"><div class="d-label">git</div><dl class="kv">' +
+            '<dt>repo</dt><dd>' + cached.repo + '</dd>' +
+            '<dt>branch</dt><dd>' + cached.branch + ' · <span class="' + behindCls + '">' + behindTxt + '</span></dd>' +
+            '<dt>commit</dt><dd><span class="hash">' + cached.hash + '</span> ' + cached.message + '</dd>' +
+            '<dt></dt><dd><span class="sub">' + cached.when + '</span></dd></dl>' +
+            '<div class="btns" style="margin-top:14px">' +
+              '<button class="btn primary" onclick="act(\'pull\')"><span class="g">⤓</span> Pull</button>' +
+              '<button class="btn primary" onclick="act(\'pullreload\')"><span class="g">⤓</span> Pull &amp; reload</button>' +
+            '</div></div>';
+      } else {
+        git =
+          '<div class="d-section" id="gitSection"><div class="d-label">git</div>' +
+            '<div class="no-repo">No repo linked — paste a URL to enable pull:</div>' +
+            '<div class="link-form">' +
+              '<input id="repoInput" placeholder="github.com/you/app" spellcheck="false" autocomplete="off" />' +
+              '<button class="btn primary" onclick="linkRepo()"><span class="g">◆</span> Link</button>' +
+            '</div></div>';
+      }
+    }
+
+    $("detail").innerHTML =
+      '<div class="d-head"><div class="d-title"><span class="d-name">' + p.name + '</span>' +
+        '<span class="d-status ' + SCLASS[p.state] + '"><span class="state">' + GLYPH[p.state] + ' ' + p.state + '</span></span></div>' +
+        '<div class="d-host">' + h.host + ' · ' + h.role + (h.net ? ' · <span class="net">' + h.net + '</span>' : '') + '</div></div>' +
+      '<div class="d-section"><div class="d-label">actions</div><div class="btns">' +
+        '<button class="btn primary" onclick="act(\'restart\')"><span class="g">↻</span> Restart</button>' +
+        '<button class="btn primary" onclick="act(\'reload\')"><span class="g">⟳</span> Reload</button>' +
+        startStop +
+        '<button class="btn" ' + (h.remote ? 'disabled title="not available for remote agents yet"' : 'onclick="openLogs()"') + '><span class="g">▤</span> Logs</button>' +
+        '<button class="btn danger wide" ' + (h.remote ? 'disabled title="not available for remote agents yet"' : 'onclick="act(\'remove\')"') + '><span class="g">⌦</span> Remove</button>' +
+      '</div></div>' +
+      git +
+      '<div class="d-section" style="border-bottom:none"><div class="d-label">info</div><dl class="kv">' +
+        '<dt>pid</dt><dd>' + (p.pid || "—") + '</dd>' +
+        '<dt>port</dt><dd>' + (p.port ? '<span style="color:var(--cyan)">:' + p.port + '</span>' : "—") + '</dd>' +
+        '<dt>uptime</dt><dd>' + (p.up || "—") + '</dd>' +
+        '<dt>restarts</dt><dd>' + p.restarts + '</dd>' +
+        '<dt>cmd</dt><dd>' + p.cmd + '</dd></dl></div>';
+  }
+
+  async function loadGit(key, name) {
+    try {
+      const info = await api("/processes/" + encodeURIComponent(name) + "/git");
+      gitCache.set(key, info || false);
+    } catch {
+      gitCache.set(key, false);
+    }
+    if (selHost() && selHost().id + ":" + selProc().name === key) renderDetail();
+  }
+
+  function updateCounts() {
+    const all = fleet.flatMap((h) => h.procs);
+    $("c-hosts").textContent = fleet.length;
+    $("c-svc").textContent = all.length;
+    $("c-up").textContent = all.filter((p) => p.state === "run").length;
+    $("c-down").textContent = all.filter((p) => p.state === "crash" || p.state === "stop").length;
+  }
+
+  function move(d) {
+    if (!flat.length) return;
+    sel = Math.max(0, Math.min(flat.length - 1, sel + d));
+    const p = selProc();
+    selKey = p ? selHost().id + ":" + p.name : null;
+    render();
+    const el = document.querySelector('.row[data-idx="' + sel + '"]');
+    if (el) el.scrollIntoView({ block: "nearest" });
+  }
+
+  function actionPath(h, name, action) {
+    return h.remote ? "/agents/" + h.id + "/processes/" + encodeURIComponent(name) + "/" + action
+                     : "/processes/" + encodeURIComponent(name) + "/" + action;
+  }
+
+  async function act(kind) {
+    const p = selProc(), h = selHost();
+    if (!p) return;
+    const key = h.id + ":" + p.name;
+    try {
+      if (kind === "stop") { await api(actionPath(h, p.name, "stop"), { method: "POST" }); toast("ok", "⏹", "Stopped " + p.name); await refresh(); return; }
+      if (kind === "start") { await api(actionPath(h, p.name, "start"), { method: "POST" }); markBoot(key); toast("ok", "●", "Started " + p.name); return; }
+      if (kind === "restart") { await api(actionPath(h, p.name, "restart"), { method: "POST" }); markBoot(key); toast("ok", "↻", "Restarting " + p.name); return; }
+      if (kind === "reload") { await api(actionPath(h, p.name, "reload"), { method: "POST" }); markBoot(key); toast("info", "⟳", "Reloading " + p.name + " — zero gap"); return; }
+      if (kind === "remove") { await api("/processes/" + encodeURIComponent(p.name), { method: "DELETE" }); toast("ok", "⌦", "Removed " + p.name); selKey = null; await refresh(); return; }
+      if (kind === "pull" || kind === "pullreload") { await doPull(p, h, kind === "pullreload"); return; }
+    } catch (err) {
+      toast("info", "!", err.message || "action failed");
+    }
+  }
+
+  function markBoot(key) {
+    pending.add(key);
+    render();
+    let n = 0;
+    const iv = setInterval(() => {
+      const m = document.querySelector('.row[data-idx="' + sel + '"] .marker');
+      if (!m || !pending.has(key)) return clearInterval(iv);
+      m.textContent = SPIN[n++ % SPIN.length];
+    }, 80);
+    setTimeout(async () => {
+      clearInterval(iv);
+      pending.delete(key);
+      await refresh();
+      const row = document.querySelector('.row[data-idx="' + sel + '"]');
+      if (row) row.classList.add("flash");
+    }, 1800);
+  }
+
+  async function doPull(p, h, thenReload) {
+    toast("info", "⤓", "Pulling…");
+    try {
+      const info = await api("/processes/" + encodeURIComponent(p.name) + "/pull", { method: "POST" });
+      gitCache.set(h.id + ":" + p.name, info);
+      toast("ok", "✓", info.behind > 0 ? "Pulled — now at " + info.hash : "Already up to date");
+      renderDetail();
+      renderList();
+      if (thenReload) await act("reload");
+    } catch (err) {
+      toast("info", "!", err.message || "pull failed");
+    }
+  }
+
+  async function linkRepo() {
+    const el = $("repoInput");
+    const v = (el ? el.value : "").trim();
+    if (!v) { if (el) el.focus(); return; }
+    const p = selProc(), h = selHost();
+    try {
+      const info = await api("/processes/" + encodeURIComponent(p.name) + "/git", { method: "POST", body: JSON.stringify({ url: v }) });
+      gitCache.set(h.id + ":" + p.name, info);
+      toast("ok", "◆", "Linked " + info.repo);
+      renderDetail();
+    } catch (err) {
+      toast("info", "!", err.message || "link failed");
+    }
+  }
+
+  function toast(kind, glyph, msg) {
+    const t = document.createElement("div");
+    t.className = "toast " + kind;
+    t.innerHTML = '<span class="g">' + glyph + '</span><span>' + msg + '</span>';
+    $("toasts").appendChild(t);
+    setTimeout(() => { t.style.transition = "opacity .3s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 2600);
+  }
+
+  let logTimer = null;
+  function stamp() { return new Date().toTimeString().slice(0, 8); }
+  async function refreshLogs() {
+    const p = selProc();
+    if (!p) return;
+    try {
+      const text = await api("/processes/" + encodeURIComponent(p.name) + "/logs?lines=300");
+      const body = $("logBody");
+      const atBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 4;
+      body.innerHTML = "";
+      text.split("\n").filter(Boolean).forEach((line) => appendLog(line));
+      if (atBottom) body.scrollTop = body.scrollHeight;
+    } catch {}
+  }
+  function appendLog(line) {
+    const body = $("logBody");
+    const ln = document.createElement("div");
+    ln.className = "ln";
+    ln.innerHTML = '<span class="ts">' + stamp() + '</span><span class="msg"></span>';
+    ln.querySelector(".msg").textContent = line;
+    body.appendChild(ln);
+  }
+  function openLogs() {
+    const p = selProc(), h = selHost();
+    if (!p || h.remote) return;
+    $("logSub").textContent = p.name + " · " + h.host;
+    $("logBody").innerHTML = "";
+    $("ovLogs").classList.add("show");
+    refreshLogs();
+    logTimer = setInterval(refreshLogs, 1500);
+  }
+  function closeLogs() { $("ovLogs").classList.remove("show"); if (logTimer) clearInterval(logTimer); }
+  function copyLogs() {
+    const lines = [...$("logBody").querySelectorAll(".ln")].map((l) => l.querySelector(".ts").textContent + " " + l.querySelector(".msg").textContent);
+    navigator.clipboard.writeText(lines.join("\n")).then(() => toast("ok", "⧉", "Copied " + lines.length + " lines")).catch(() => toast("info", "⧉", "Copy blocked by browser"));
+  }
+
+  function openKeys() { $("ovKeys").classList.add("show"); }
+  function closeKeys() { $("ovKeys").classList.remove("show"); }
+
+  const COMMANDS = [
+    { key: "restart", desc: "restart service", run: () => act("restart") },
+    { key: "reload", desc: "zero-gap reload", run: () => act("reload") },
+    { key: "stop", desc: "stop service", run: () => act("stop") },
+    { key: "start", desc: "start service", run: () => act("start") },
+    { key: "pull", desc: "git pull", run: () => act("pull") },
+    { key: "logs", desc: "tail logs", run: openLogs },
+    { key: "remove", desc: "remove service", run: () => act("remove") },
+  ];
+  let pSel = 0;
+  function openPalette() { if (!flat.length) return; $("ovPalette").classList.add("show"); $("pInput").value = ""; pSel = 0; renderPalette(""); $("pInput").focus(); }
+  function closePalette() { $("ovPalette").classList.remove("show"); $("cmd").blur(); }
+  function filtered(q) { q = q.trim().toLowerCase(); return COMMANDS.filter((c) => !q || c.key.includes(q) || c.desc.includes(q)); }
+  function renderPalette(q) {
+    const list = filtered(q);
+    if (pSel >= list.length) pSel = list.length - 1;
+    if (pSel < 0) pSel = 0;
+    const el = $("pList");
+    el.innerHTML = "";
+    const p = selProc();
+    list.forEach((c, i) => {
+      const d = document.createElement("div");
+      d.className = "pcmd" + (i === pSel ? " sel" : "");
+      d.innerHTML = '<span class="key">' + c.key + '</span><span class="desc">' + c.desc + '</span><span class="arg">' + (p ? p.name : "") + '</span>';
+      d.addEventListener("click", () => { closePalette(); c.run(); });
+      el.appendChild(d);
+    });
+  }
+  function runPalette() { const list = filtered($("pInput").value); const c = list[pSel]; closePalette(); if (c) c.run(); }
+
+  const cmd = $("cmd");
+  document.addEventListener("keydown", (e) => {
+    if ($("ovPalette").classList.contains("show")) {
+      if (e.key === "Escape") { e.preventDefault(); closePalette(); }
+      else if (e.key === "ArrowDown") { e.preventDefault(); pSel++; renderPalette($("pInput").value); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); pSel--; renderPalette($("pInput").value); }
+      else if (e.key === "Enter") { e.preventDefault(); runPalette(); }
+      return;
+    }
+    if ($("ovKeys").classList.contains("show")) { if (e.key === "q" || e.key === "Escape") { e.preventDefault(); closeKeys(); } return; }
+    if ($("ovLogs").classList.contains("show")) { if (e.key === "q" || e.key === "Escape") { e.preventDefault(); closeLogs(); } else if (e.key === "c") { e.preventDefault(); copyLogs(); } return; }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; }
+    if (e.key === "?") { e.preventDefault(); openKeys(); return; }
+    if (document.activeElement && document.activeElement.tagName === "INPUT" && document.activeElement !== cmd) return;
+    const typing = document.activeElement === cmd && cmd.value.length > 0;
+    if (typing) { if (e.key === "Enter") { e.preventDefault(); runCmdLine(); } if (e.key === "Escape") { cmd.value = ""; cmd.blur(); } return; }
+    if (currentView !== "fleet") return;
+    switch (e.key) {
+      case "j": case "ArrowDown": e.preventDefault(); move(1); break;
+      case "k": case "ArrowUp": e.preventDefault(); move(-1); break;
+      case "r": e.preventDefault(); act("restart"); break;
+      case "s": e.preventDefault(); { const p = selProc(); if (p) act(p.state === "run" ? "stop" : "start"); } break;
+      case "l": case "Enter": e.preventDefault(); openLogs(); break;
+      case "/": e.preventDefault(); openPalette(); break;
+    }
+  });
+  function runCmdLine() {
+    const parts = cmd.value.trim().split(/\s+/);
+    const verb = parts[0], arg = parts[1];
+    if (arg) {
+      let found = false;
+      fleet.forEach((h, hi) => h.procs.forEach((p, pi) => { if (p.name === arg) { sel = flat.findIndex(([a, b]) => a === hi && b === pi); found = true; } }));
+      if (!found) { cmd.value = ""; return; }
+    }
+    const c = COMMANDS.find((c) => c.key === verb);
+    cmd.value = "";
+    render();
+    if (c) c.run();
+  }
+  $("pInput").addEventListener("input", (e) => { pSel = 0; renderPalette(e.target.value); });
+
+  async function refresh() {
+    try {
+      fleet = await fetchFleet();
+      render();
+    } catch (err) {
+      if (err.message !== "unauthorized") toast("info", "!", "Couldn't reach hub — retrying");
+    }
+  }
+
+  refresh();
+  setInterval(refresh, POLL_MS);
+</script>

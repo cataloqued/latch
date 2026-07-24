@@ -1,0 +1,33 @@
+{
+  "name": "latchup",
+  "version": "0.1.0",
+  "description": "A self-hosted panel to view and manage all your instances across systems.",
+  "license": "AGPL-3.0-only",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "latch": "./bin/latch.js",
+    "latch-mcp": "./bin/latch-mcp.js"
+  },
+  "main": "src/index.js",
+  "files": [
+    "bin",
+    "src",
+    "scripts"
+  ],
+  "scripts": {
+    "start": "node bin/latch.js up",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "commander": "^12.1.0",
+    "cookie": "^0.7.1",
+    "express": "^4.19.2",
+    "selfsigned": "^2.4.1",
+    "ws": "^8.18.0",
+    "zod": "^4.4.3"
+  }
+}

@@ -1,0 +1,52 @@
+function layout(title, body) {
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${title} — Latch</title>
+  <style>
+    :root { --bg: #0a0e13; --panel: #0e141b; --rule: #1b2530; --text: #cdd6df; --dim: #5c6875; --green: #3fb950; --green-dk: #2ea043; --red: #f85149; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+      background: var(--bg); color: var(--text);
+      display: flex; min-height: 100vh; align-items: center; justify-content: center; margin: 0;
+    }
+    main { max-width: 380px; width: 100%; padding: 2rem; }
+    h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.4rem; }
+    h1::before { content: "▪ "; color: var(--green-dk); }
+    p.sub { color: var(--dim); margin: 0 0 1.5rem; font-size: 0.9rem; line-height: 1.5; }
+    input {
+      width: 100%; box-sizing: border-box; padding: 0.7rem; font: inherit; font-size: 1.1rem;
+      letter-spacing: 0.1em; text-align: center; border: 1px solid var(--rule);
+      background: var(--panel); color: var(--text);
+    }
+    input:focus { outline: none; border-color: var(--dim); }
+    button {
+      margin-top: 0.6rem; width: 100%; padding: 0.7rem; border: 1px solid rgba(63,185,80,0.4);
+      background: transparent; color: var(--green); font: inherit; font-size: 1rem; cursor: pointer;
+    }
+    button:hover { background: rgba(63,185,80,0.12); border-color: var(--green); }
+    .error { color: var(--red); margin-top: 0.75rem; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <main>${body}</main>
+</body>
+</html>`;
+}
+
+function pairPage({ error } = {}) {
+  return layout('Pair this browser', `
+    <h1>latch</h1>
+    <p class="sub">Enter the one-time code shown on the server (SSH into the box to see it again).</p>
+    <form method="post" action="/api/pair">
+      <input name="code" placeholder="XXXX-XXXX" autofocus autocomplete="off" />
+      <button type="submit">Pair</button>
+    </form>
+    ${error ? `<p class="error">${error}</p>` : ''}
+  `);
+}
+
+module.exports = { pairPage };

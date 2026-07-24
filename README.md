@@ -4,10 +4,11 @@
 
 ### A lightweight, self-hosted panel for managing processes across all your systems.
 
-![Self-hosted](https://img.shields.io/badge/fully-self--hosted-25-7C3AED?style=for-the-badge)
+![Self-hosted](https://img.shields.io/badge/self--hosted-fully-7C3AED?style=for-the-badge)
 ![Multi-VPS](https://img.shields.io/badge/multi--VPS-support-22C55E?style=for-the-badge)
-![Runtime](https://img.shields.io/badge/live-logs-0EA5E9?style=for-the-badge)
-![Control Plane](https://img.shields.io/badge/no-paywall-or-signup-F97316?style=for-the-badge)
+![Live Logs](https://img.shields.io/badge/live-logs-0EA5E9?style=for-the-badge)
+![No Paywall](https://img.shields.io/badge/no_paywall-or_signup-F97316?style=for-the-badge)
+
 
 </div>
 

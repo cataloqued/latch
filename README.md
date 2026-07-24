@@ -1,39 +1,146 @@
-# Latch
+<div align="center">
 
-**Latch is a self-hosted panel to view and manage your instances across systems.**
+# 🔐 Latch
 
-Latch is like an SSH key for your browser. Install it on a VPS, open the dashboard, and remotely monitor, restart, stop, or reconfigure your processes without touching the command line. No third-party service in the middle.
+### A lightweight, self-hosted panel for managing processes across all your systems.
 
-```bash
-npm i -g latchup      # installs the `latch` command
-latch up             # starts the panel over TLS + prints the connection link
-```
+![Self-hosted](https://img.shields.io/badge/self--hosted-100%25-7C3AED?style=for-the-badge)
+![Multi-VPS](https://img.shields.io/badge/multi--VPS-ready-22C55E?style=for-the-badge)
+![Runtime](https://img.shields.io/badge/runtime-agnostic-0EA5E9?style=for-the-badge)
+![Control Plane](https://img.shields.io/badge/control_plane-yours-F97316?style=for-the-badge)
 
-Open the link, enter the one-time code, and you browser is paired. It's as simple as that.
+</div>
 
 ---
 
-## Why
+## ✨ What is Latch?
 
-Existing tools force users into a trap. Latch does everything, better.
+**Latch is a self-hosted dashboard for viewing and managing your processes across multiple systems.**
 
-- **PM2** is great but single-host, Node only and is CLI only.
-- **Portainer / Coolify / Dokploy** are heavyweight — full PaaS platforms when all you wanted was to see and edit your processes.
-- **pm2.io** is paid whilst seeing all of your data.
+Think of it as an **SSH key for your browser**.
 
-Latch is the missing middle: **lightweight, multi-VPS, runtime-agnostic** (Node, Python, or any binary), and **fully self-hosted**.
+Install Latch on a VPS, open the dashboard, and remotely:
 
-## How it works
+* 👀 Monitor your processes
+* 🔄 Restart applications
+* ⏹️ Stop running processes
+* ⚙️ Update process configuration
+* 🖥️ Manage multiple machines from one panel
 
-Latch's root of trust is simple and one you already rely on
+All without repeatedly working through a command-line interface.
 
-> **If you can SSH in, you can control it with Latch. If you can't, you can't.**
+> [!IMPORTANT]
+> Your browser communicates directly with infrastructure you control. There is no Latch-hosted control plane sitting between you and your machines.
 
-- **Self-hosted by design.** The panel is up *by Latch on your own box* — your browser talks to your machine, never to a Latch server. There is no Latch server.
-- **Device-pairing, not passwords.** Run `latch up`, get a URL + a short one-time code (the SSH login hook reprints it every time you log in). Enter it in the panel to securely connect to your Latch Panel.
+---
+
+## 🚀 Get started
+
+```bash
+npm install --global latchup
+```
+
+Start the encrypted panel:
+
+```bash
+latch up
+```
+
+Latch will start the panel over TLS and print:
+
+* A secure connection URL
+* A short, one-time pairing code
+
+Open the URL in your browser, enter the code, and your device is paired.
+
+**That is it.**
+
+---
+
+## 🎯 Why Latch?
+
+Existing tools force users into a trap. Latch does everything, no sign-in or billing required.s
+
+- **PM2** is great but single-host, Node and CLI only
+- **Portainer / Coolify / Dokploy** are heavyweight — full PaaS platforms when all you wanted was to see and edit your processes
+- **pm2.io** is paid whilst seeing all of your data
+
+Latch sits in the middle:
+
+✅ **Lightweight**
+✅ **Multi-VPS**
+✅ **Runtime-agnostic**
+✅ **Browser-based**
+✅ **Self-hosted**
+✅ **No external Latch account required**
+
+Run Node.js, Python, shell scripts, compiled binaries, or anything else your machine can execute.
+
+---
+
+## 🔑 Security 
+
+Latch has a simple root of trust:
+
+> **If you can SSH into the machine, you can use Latch. If you cannot, you cannot.**
+
+### Self-hosted by design
+
+The Latch panel runs on infrastructure you control.
+
+Your browser connects to your machine rather than connecting through a hosted Latch backend.
+
+### Device pairing instead of passwords
+
+Run:
+
+```bash
+latch up
+```
+
+Latch generates a connection URL and a short-lived, one-time code.
+
+Enter the code in the panel to pair your browser securely with the Latch instance.
+
+The SSH login hook can reprint the pairing information whenever you log into the machine.
+
+> [!NOTE]
+> Pairing codes are intended for initial device authentication. They are not permanent passwords.
+
+---
+
+## 🌐 Multi-VPS management
+
+One machine runs the **Latch Hub**, which hosts the dashboard.
+
+Your other machines run lightweight **Latch Agents** that connect using tokens.
+
+```text
+                    ┌──────────────────┐
+                    │   Latch Panel    │
+                    │                  │
+                    └────────┬─────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              │              │              │
+        ┌─────▼─────┐  ┌─────▼─────┐  ┌─────▼─────┐
+        │           │  │           │  │           │
+        │   VPS A   │  │   VPS B   │  │   VPS C   │
+        └───────────┘  └───────────┘  └───────────┘
+```
 
 
-## Multi-VPS
+1. Start the panel
+2. Generate an agent token.
+3. Join another machine.
+4. Manage everything from one dashboard.
 
-One host runs the **hub** (panel); the rest run thin **agents** that join it with a hub-issued token — the k3s / Tailscale join pattern. One panel, view every machine.
+**One panel. Every machine. Every process.**
 
+---
+
+<div align="center">
+
+### Your machines. Your panel. Your control.
+
+</div>

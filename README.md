@@ -30,7 +30,7 @@ Install Latch on a VPS, open the dashboard, and remotely:
 All without repeatedly working through a command-line interface.
 
 > [!IMPORTANT]
-> Latch works like this: your Host => the internet => your router => your device
+> Latch works like this: your Host => the internet => your router => your device.
 > None of your data goes through any Latch infrastructure, there isn't any.
 
 ---

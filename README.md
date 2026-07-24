@@ -61,7 +61,7 @@ Open the URL in your browser, enter the code, and your device is paired.
 
 ## 🎯 Why Latch?
 
-Existing tools force users into a trap. Latch does everything, no sign-in or billing required.s
+Existing tools force users into a trap. Latch does everything, no sign-in or billing required.
 
 - **PM2** is great but single-host, Node and CLI only
 - **Portainer / Coolify / Dokploy** are heavyweight — full PaaS platforms when all you wanted was to see and edit your processes
@@ -117,7 +117,7 @@ One machine runs the **Latch Hub**, which hosts the dashboard.
 
 Your other machines run lightweight **Latch Agents** that connect using tokens.
 
-```text
+
 ```text
                          ┌─────────────────┐
                          │     Browser     │
@@ -140,7 +140,7 @@ Your other machines run lightweight **Latch Agents** that connect using tokens.
         └────────────────┘ └────────────────┘ └────────────────┘
 ```
 
-```
+
 
 
 1. Start the panel
@@ -149,6 +149,15 @@ Your other machines run lightweight **Latch Agents** that connect using tokens.
 4. Manage everything from one dashboard.
 
 **One panel. Every machine. Every process.**
+
+---
+
+## 📄 License
+
+Latch is licensed under [GNU AGPL v3.0](LICENSE).
+
+> [!NOTE]
+> The AGPL's network clause means anyone running a modified Latch as a service must also share their changes — it keeps Latch open, even when self-hosted.
 
 ---
 

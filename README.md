@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🔐 Latch
+# Latch
 
-### A lightweight, self-hosted panel for managing processes across all your systems.
+### A self-hosted panel for managing processes across all your systems.
 
 ![Self-hosted](https://img.shields.io/badge/self--hosted-fully-7C3AED?style=for-the-badge)
 ![Multi-VPS](https://img.shields.io/badge/multi--VPS-supported-22C55E?style=for-the-badge)
@@ -14,7 +14,7 @@
 
 ---
 
-## ✨ What is Latch?
+## What is Latch?
 
 **Latch is a self-hosted dashboard for viewing and managing your processes across multiple systems.**
 
@@ -28,7 +28,7 @@ Install Latch on a VPS, open the dashboard, and remotely:
 * ⚙️ Update process configuration
 * 🖥️ Manage multiple machines from one panel
 
-All without repeatedly working through a command-line interface.
+
 
 > [!IMPORTANT]
 > Latch works like this: your Host => the internet => your router => your device.
@@ -36,7 +36,7 @@ All without repeatedly working through a command-line interface.
 
 ---
 
-## 🚀 Get started
+##  Get started
 
 ```bash
 npm install --global latchup
@@ -59,7 +59,7 @@ Open the URL in your browser, enter the code, and your device is paired.
 
 ---
 
-## 🎯 Why Latch?
+##  Why Latch?
 
 Existing tools force users into a trap. Latch does everything, no sign-in or billing required.
 
@@ -67,7 +67,7 @@ Existing tools force users into a trap. Latch does everything, no sign-in or bil
 - **Portainer / Coolify / Dokploy** are heavyweight — full PaaS platforms when all you wanted was to see and edit your processes
 - **pm2.io** is paid whilst seeing all of your data
 
-Latch sits in the middle:
+Latch is the best of all worlds
 
 ✅ **Lightweight**
 ✅ **Multi-VPS**
@@ -80,7 +80,7 @@ Run Node.js, Python, shell scripts, compiled binaries, or anything else your mac
 
 ---
 
-## 🔑 Security 
+##  Security 
 
 Latch has a simple root of trust:
 
@@ -111,7 +111,7 @@ The SSH login hook can reprint the pairing information whenever you log into the
 
 ---
 
-## 🌐 Multi-VPS management
+##  Multi-VPS management
 
 One machine runs the **Latch Hub**, which hosts the dashboard.
 
@@ -152,14 +152,10 @@ Your other machines run lightweight **Latch Agents** that connect using tokens.
 
 ---
 
-## 📄 License
+##  License
 
 Latch is licensed under [GNU AGPL v3.0](LICENSE).
 
-> [!NOTE]
-> The AGPL's network clause means anyone running a modified Latch as a service must also share their changes — it keeps Latch open, even when self-hosted.
-
----
 
 <div align="center">
 

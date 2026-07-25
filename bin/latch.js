@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+
 const { Command } = require('commander');
 const config = require('../src/core/config');
 const store = require('../src/core/store');

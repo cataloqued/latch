@@ -1,6 +1,6 @@
 {
   "name": "latchup",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A self-hosted panel to view and manage all your instances across systems.",
   "license": "AGPL-3.0-only",
   "type": "commonjs",

@@ -13,6 +13,38 @@ function underline(text) {
   return [...text].map((ch) => ch + '̲').join('');
 }
 
+// half-block truecolor render of the Latch mark, next to a plain wordmark
+const BANNER_LINES = [
+  "   \x1b[38;2;87;200;104m\x1b[49m▄\x1b[38;2;136;215;153m\x1b[48;2;62;195;80m▀\x1b[38;2;100;201;117m\x1b[49m▄    \x1b[0m",
+  "  \x1b[38;2;84;191;101m\x1b[48;2;85;192;102m▀\x1b[38;2;77;196;95m\x1b[48;2;117;201;134m▀\x1b[38;2;114;200;131m\x1b[48;2;98;197;115m▀\x1b[38;2;64;189;81m\x1b[48;2;135;207;151m▀\x1b[38;2;86;201;104m\x1b[48;2;81;194;98m▀\x1b[38;2;83;195;101m\x1b[49m▄  \x1b[0m",
+  " \x1b[38;2;105;197;122m\x1b[49m▄\x1b[38;2;88;201;105m\x1b[48;2;90;210;109m▀\x1b[38;2;79;190;95m\x1b[48;2;86;192;103m▀\x1b[38;2;79;192;96m\x1b[49m▀\x1b[38;2;74;196;92m\x1b[48;2;114;200;130m▀\x1b[38;2;123;203;139m\x1b[48;2;81;198;98m▀\x1b[38;2;91;205;109m\x1b[48;2;93;200;111m▀\x1b[38;2;101;196;118m\x1b[48;2;91;194;107m▀ \x1b[0m",
+  " \x1b[38;2;134;208;151m\x1b[48;2;120;204;136m▀\x1b[38;2;138;226;156m\x1b[48;2;90;216;109m▀\x1b[38;2;119;202;135m\x1b[48;2;153;214;168m▀  \x1b[38;2;131;208;148m\x1b[49m▀\x1b[38;2;78;198;96m\x1b[48;2;81;190;97m▀\x1b[38;2;82;190;98m\x1b[48;2;70;191;88m▀ \x1b[0m",
+  " \x1b[38;2;90;194;107m\x1b[48;2;83;190;100m▀\x1b[38;2;87;212;106m\x1b[48;2;77;200;95m▀    \x1b[38;2;113;200;130m\x1b[48;2;136;208;153m▀\x1b[38;2;131;214;148m\x1b[48;2;127;214;144m▀ \x1b[0m",
+  " \x1b[38;2;81;190;97m\x1b[48;2;78;190;94m▀\x1b[38;2;74;189;91m\x1b[48;2;75;188;92m▀    \x1b[38;2;133;207;150m\x1b[48;2;80;191;97m▀\x1b[38;2;142;223;156m\x1b[48;2;65;203;83m▀\x1b[38;2;101;196;120m\x1b[49m▄\x1b[0m",
+  " \x1b[38;2;75;189;92m\x1b[48;2;73;189;90m▀\x1b[38;2;79;189;95m\x1b[48;2;83;191;100m▀    \x1b[38;2;130;206;146m\x1b[48;2;97;200;115m▀\x1b[38;2;136;221;149m\x1b[48;2;89;196;106m▀\x1b[38;2;134;206;150m\x1b[48;2;104;198;120m▀\x1b[0m   \x1b[32m\x1b[1m _       _       _\x1b[0m",
+  " \x1b[38;2;76;198;93m\x1b[48;2;77;205;95m▀\x1b[38;2;87;192;103m\x1b[48;2;91;192;108m▀    \x1b[38;2;68;189;86m\x1b[48;2;72;190;90m▀\x1b[38;2;54;185;71m\x1b[48;2;60;187;77m▀\x1b[38;2;83;191;99m\x1b[48;2;86;192;102m▀\x1b[0m   \x1b[32m\x1b[1m| | __ _| |_ ___| |__\x1b[0m",
+  "\x1b[38;2;102;197;116m\x1b[49m▄\x1b[38;2;77;208;96m\x1b[48;2;78;209;97m▀\x1b[38;2;97;196;114m\x1b[49m▀    \x1b[38;2;81;196;99m\x1b[48;2;133;208;148m▀\x1b[38;2;66;189;84m\x1b[48;2;138;218;152m▀\x1b[38;2;92;194;108m\x1b[48;2;134;208;150m▀\x1b[0m   \x1b[32m\x1b[1m| |/ _\` | __/ __| '_ \\\x1b[0m",
+  "\x1b[38;2;93;194;111m\x1b[48;2;88;192;104m▀\x1b[38;2;77;207;96m\x1b[48;2;77;202;95m▀     \x1b[38;2;99;195;116m\x1b[48;2;135;208;150m▀\x1b[38;2;98;212;113m\x1b[48;2;140;219;155m▀\x1b[38;2;115;200;132m\x1b[49m▀\x1b[0m   \x1b[32m\x1b[1m| | (_| | || (__| | | |\x1b[0m",
+  "\x1b[38;2;80;191;96m\x1b[48;2;106;199;123m▀\x1b[38;2;83;204;101m\x1b[48;2;82;208;101m▀\x1b[38;2;133;207;151m\x1b[49m▄    \x1b[38;2;108;199;125m\x1b[48;2;132;206;148m▀\x1b[38;2;87;204;106m\x1b[48;2;128;217;145m▀ \x1b[0m   \x1b[32m\x1b[1m|_|\\__,_|\\__\\___|_| |_|\x1b[0m",
+  "\x1b[38;2;133;207;149m\x1b[48;2;113;200;129m▀\x1b[38;2;121;218;139m\x1b[48;2;111;210;128m▀\x1b[38;2;113;201;130m\x1b[48;2;89;193;105m▀    \x1b[38;2;126;205;141m\x1b[48;2;89;193;105m▀\x1b[38;2;140;219;157m\x1b[48;2;93;206;111m▀ \x1b[0m",
+  " \x1b[38;2;65;187;82m\x1b[48;2;84;191;101m▀\x1b[38;2;71;196;89m\x1b[48;2;76;197;94m▀\x1b[38;2;94;195;110m\x1b[49m▄   \x1b[38;2;77;187;93m\x1b[48;2;80;197;97m▀\x1b[38;2;66;193;84m\x1b[48;2;76;188;93m▀ \x1b[0m",
+  " \x1b[38;2;91;193;108m\x1b[49m▀\x1b[38;2;90;200;107m\x1b[48;2;79;200;97m▀\x1b[38;2;92;202;110m\x1b[48;2;109;199;126m▀\x1b[38;2;107;200;124m\x1b[48;2;79;190;96m▀\x1b[38;2;86;193;103m\x1b[49m▄\x1b[38;2;99;197;116m\x1b[48;2;78;192;95m▀\x1b[38;2;85;202;103m\x1b[48;2;100;203;117m▀\x1b[38;2;87;192;104m\x1b[48;2;87;192;104m▀ \x1b[0m",
+  "  \x1b[38;2;95;194;113m\x1b[49m▀\x1b[38;2;84;198;101m\x1b[48;2;79;195;97m▀\x1b[38;2;121;202;137m\x1b[48;2;87;194;105m▀\x1b[38;2;80;191;96m\x1b[48;2;132;206;148m▀\x1b[38;2;128;205;143m\x1b[48;2;73;191;90m▀\x1b[38;2;83;202;101m\x1b[48;2;81;192;98m▀\x1b[38;2;108;198;125m\x1b[49m▀ \x1b[0m",
+  "   \x1b[38;2;123;202;138m\x1b[49m▀\x1b[38;2;77;205;95m\x1b[48;2;131;208;148m▀\x1b[38;2;62;191;80m\x1b[48;2;131;210;148m▀\x1b[38;2;90;201;107m\x1b[49m▀\x1b[38;2;132;204;147m\x1b[49m▀  \x1b[0m",
+];
+
+const PLAIN_WORDMARK = [
+  ' _       _       _',
+  '| | __ _| |_ ___| |__',
+  "| |/ _` | __/ __| '_ \\",
+  '| | (_| | || (__| | | |',
+  '|_|\\__,_|\\__\\___|_| |_|',
+].join('\n');
+
+function banner() {
+  return process.stdout.isTTY ? BANNER_LINES.join('\n') : PLAIN_WORDMARK;
+}
+
 const program = new Command();
 program
   .name('latch')
@@ -34,11 +66,10 @@ program
     const existing = daemon.status('hub');
     if (existing.running) {
       console.log(`Latch is already running (pid ${existing.pid}).`);
-      console.log('Use `latch down` to stop it, or `latch status` to check.');
+      console.log('Use `latch kill` to stop it, or `latch status` to check.');
       return;
     }
 
-    const pairing = require('../src/core/pairing');
     const { promptOpenBrowser } = require('../src/cli/openBrowser');
     const addr = primaryAddress();
     const base = `https://${addr}:${config.hubPort}`;
@@ -53,11 +84,16 @@ program
       return;
     }
 
-
-
+    console.log(banner());
+    console.log('');
+    console.log(`Latch is up on ${base} (pid ${pid}, running in the background)`);
+    console.log(`Logs: ${daemon.logFile('hub')}`);
+    console.log('Use `latch kill` to stop it, `latch status` to check on it.');
 
     if (!hasSessions) {
-      const { code } = pairing.issue();
+      // the daemon just booted in its own process - ask it for the pairing code
+      // it actually issued, rather than generating one here that it would never see
+      const { code } = await localApi.get('/pairing-code');
       const link = `${base}/pair?code=${code}`;
       console.log('');
       console.log(underline('Open this link to pair and use Latch:'));
@@ -72,7 +108,7 @@ program
   });
 
 program
-  .command('down')
+  .command('kill')
   .description('Stop the background Latch hub or agent process')
   .action(() => {
     const daemon = require('../src/cli/daemon');
@@ -94,10 +130,25 @@ program
 program
   .command('status')
   .description('Check whether Latch is running on this server')
-  .action(() => {
+  .action(async () => {
     const daemon = require('../src/cli/daemon');
     const hub = daemon.status('hub');
-    if (hub.running) { console.log(`Running as hub (pid ${hub.pid}).`); return; }
+    if (hub.running) {
+      console.log(`Running as hub (pid ${hub.pid}).`);
+      const addr = primaryAddress();
+      const base = `https://${addr}:${config.hubPort}`;
+      try {
+        const { code, expiresAt } = await localApi.get('/pairing-code');
+        if (code) {
+          console.log(`  ${base}/pair?code=${code}  (expires ${new Date(expiresAt).toLocaleTimeString()})`);
+        } else {
+          console.log(`  ${base}`);
+        }
+      } catch {
+        console.log(`  ${base}`);
+      }
+      return;
+    }
     const agent = daemon.status('agent');
     if (agent.running) { console.log(`Running as agent (pid ${agent.pid}).`); return; }
     console.log('Latch is not running. Start it with `latch up` or `latch join`.');
@@ -207,7 +258,7 @@ program
     const existing = daemon.status('agent');
     if (existing.running) {
       console.log(`Already running as an agent (pid ${existing.pid}).`);
-      console.log('Use `latch down` to stop it, or `latch status` to check.');
+      console.log('Use `latch kill` to stop it, or `latch status` to check.');
       return;
     }
 
@@ -225,7 +276,7 @@ program
     console.log(`Joining ${hubUrl} as an agent... (pid ${pid})`);
     console.log('Local CLI (add/ps/start/stop/logs) works on this box same as on a hub');
     console.log(`Logs: ${daemon.logFile('agent')}`);
-    console.log('Use `latch down` to stop it, `latch status` to check on it');
+    console.log('Use `latch kill` to stop it, `latch status` to check on it');
   });
 
 program
@@ -368,4 +419,11 @@ program
     }
   });
 
-program.parseAsync(process.argv);
+program.parseAsync(process.argv).catch((err) => {
+  if (err.code === 'ECONNREFUSED') {
+    console.error('Could not reach Latch on this server. Is it running? Start it with `latch up`.');
+  } else {
+    console.error(err.message || String(err));
+  }
+  process.exitCode = 1;
+});

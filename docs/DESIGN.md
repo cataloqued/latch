@@ -5,7 +5,7 @@ Backend architecture as currently implemented. Not aspirational — if it's desc
 ## Command reference
 
 | `latch up` - Start the hub (panel + API) on this server, daemonized in the background
-| `latch down` - Stop the background hub or agent process
+| `latch kill` - Stop the background hub or agent process
 | `latch status` - Check whether Latch is running on this server
 | `latch pair` - Print the current pairing link and one-time code
 | `latch token create [--label <name>]` - Create a join token for connecting another server as an agent
@@ -34,7 +34,7 @@ The only way to create a session is to have shell access to the machine (to read
 - **Agent** — a box running `latch join`. Connects outbound to the hub; the hub never connects to the agent. An agent behind NAT or a firewall needs no inbound ports open — only the hub needs to be reachable. An agent also runs its own loopback-only `/internal` server, identical in shape to the hub's, so the local `latch` CLI (`add`, `ps`, `start`, `stop`, `logs`, ...) works the same on an agent box as on a hub.
 - **CLI** — every `latch <command>` is a separate short-lived process. `up` and `join` daemonize by default (see below); everything else runs, talks to whichever local `/internal` server owns that box (hub or agent), and exits.
 
-**Daemonization**: `latch up`/`latch join` spawn a detached child process (`--foreground`, an internal flag) that runs the actual server, write its PID to `~/.latch/{hub,agent}.pid`, and the parent exits once the child is confirmed alive — the terminal is free immediately, same shape as `pm2 start`. The child's stdout/stderr redirect to `~/.latch/logs/{hub,agent}.log` rather than the terminal. `latch down` reads the PID file and kills the whole process tree (`taskkill /T /F` on Windows, `kill` on the negative/group PID on POSIX, since the daemon is its own process group leader) — this matters because a hub's managed child processes would otherwise be orphaned by killing just the hub PID. `latch status` reports whether a PID file points at a still-live process. Running `up`/`join` again while already running refuses instead of hitting `EADDRINUSE`.
+**Daemonization**: `latch up`/`latch join` spawn a detached child process (`--foreground`, an internal flag) that runs the actual server, write its PID to `~/.latch/{hub,agent}.pid`, and the parent exits once the child is confirmed alive — the terminal is free immediately, same shape as `pm2 start`. The child's stdout/stderr redirect to `~/.latch/logs/{hub,agent}.log` rather than the terminal. `latch kill` reads the PID file and kills the whole process tree (`taskkill /T /F` on Windows, `kill` on the negative/group PID on POSIX, since the daemon is its own process group leader) — this matters because a hub's managed child processes would otherwise be orphaned by killing just the hub PID. `latch status` reports whether a PID file points at a still-live process. Running `up`/`join` again while already running refuses instead of hitting `EADDRINUSE`.
 
 ## Pairing
 

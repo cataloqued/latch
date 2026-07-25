@@ -14,7 +14,7 @@ latch join <hubUrl> --token <t> --fingerprint <fp>   # run as an agent
 latch agents                  # list connected agents
 latch token api --label x     # create an API token for MCP/scripts
 latch sessions / sessions revoke <id>
-latch down                    # stop
+latch kill                    # stop
 latch status                  # is it running
 ```
 

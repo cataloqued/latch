@@ -162,6 +162,10 @@ function list() {
   return Object.keys(store.read().processes).map(status);
 }
 
+function stopAll() {
+  for (const name of running.keys()) stop(name);
+}
+
 function logs(name, { lines = 200 } = {}) {
   const entry = running.get(name);
   const buffered = entry ? entry.logBuffer.join('') : '';
@@ -173,4 +177,4 @@ function logs(name, { lines = 200 } = {}) {
   }
 }
 
-module.exports = { add, start, stop, restart, reload, remove, status, list, logs };
+module.exports = { add, start, stop, restart, reload, remove, status, list, logs, stopAll };

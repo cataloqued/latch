@@ -148,6 +148,18 @@ router.post('/agents/:id/processes', (req, res) => {
   res.json({ ok: true });
 });
 
+router.post('/shutdown', (_req, res) => {
+  res.json({ ok: true });
+  setTimeout(() => {
+    processManager.stopAll();
+    try {
+      const daemon = require('../cli/daemon');
+      require('fs').rmSync(daemon.pidFile('hub'), { force: true });
+    } catch {}
+    process.exit(0);
+  }, 200);
+});
+
 router.post('/agents/:id/processes/:name/:action', (req, res) => {
   const { id, name, action } = req.params;
   if (!['start', 'stop', 'restart', 'reload', 'remove'].includes(action)) {

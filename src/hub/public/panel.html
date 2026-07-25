@@ -130,6 +130,11 @@
     align-items: center;
   }
 
+  .barbtn.danger:hover {
+    color: var(--red);
+    border-color: var(--red);
+  }
+
   .barbtn:hover {
     color: var(--text);
     border-color: var(--dim);
@@ -1092,6 +1097,7 @@
   <button class="barbtn" onclick="openAddProcess()"><span class="g">+</span> process</button>
   <button class="barbtn" onclick="openAddServer()"><span class="g">+</span> server</button>
   <button class="barbtn" onclick="openKeys()"><span class="g">⌨</span> keys</button>
+  <button class="barbtn danger" onclick="shutdownClicked()" title="stop the Latch hub on this server">⏻</button>
   <span class="kbd-hint"><kbd>⌘K</kbd> commands</span>
 </div>
 
@@ -1229,6 +1235,15 @@
         <button class="btn" onclick="closeConfirm(false)">Cancel</button>
         <button class="btn danger" onclick="closeConfirm(true)">Confirm</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovStopped">
+  <div class="modal" style="width:min(420px,92vw)">
+    <div class="modal-head"><span class="t">latch stopped</span></div>
+    <div class="modal-body">
+      <p style="margin:0;color:var(--text)">The hub on this server has been shut down. Run <span style="color:var(--green)">latch up</span> on the server to start it again.</p>
     </div>
   </div>
 </div>
@@ -1772,6 +1787,18 @@
     if (confirmResolve) { confirmResolve(!!result); confirmResolve = null; }
   }
 
+  let shuttingDown = false;
+  async function shutdownClicked() {
+    const ok = await openConfirm(
+      "Stop Latch",
+      "Stop the Latch hub on this server? Every process it manages will be stopped too. You'll need shell access to start it again.",
+    );
+    if (!ok) return;
+    shuttingDown = true;
+    try { await api("/shutdown", { method: "POST" }); } catch {}
+    $("ovStopped").classList.add("show");
+  }
+
   async function removeClicked(e, name) {
     if (e.shiftKey) { act("remove"); return; }
     const ok = await openConfirm("Remove process", 'Remove "' + name + '"? This stops it and deletes its config.');
@@ -1856,6 +1883,7 @@
   $("pInput").addEventListener("input", (e) => { pSel = 0; renderPalette(e.target.value); });
 
   async function refresh() {
+    if (shuttingDown) return;
     try {
       fleet = await fetchFleet();
       render();

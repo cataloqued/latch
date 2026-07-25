@@ -53,9 +53,9 @@ program
       return;
     }
 
-    console.log(`Latch is up on ${base} (pid ${pid}, running in the background)`);
-    console.log(`Logs: ${daemon.logFile('hub')}`);
-    console.log('Use `latch down` to stop it, `latch status` to check on it.');
+
+
+
     if (!hasSessions) {
       const { code } = pairing.issue();
       const link = `${base}/pair?code=${code}`;
@@ -222,10 +222,10 @@ program
       return;
     }
 
-    console.log(`Joining ${hubUrl} as an agent... (pid ${pid}, running in the background)`);
-    console.log('Local CLI (add/ps/start/stop/logs) works on this box same as on a hub.');
+    console.log(`Joining ${hubUrl} as an agent... (pid ${pid})`);
+    console.log('Local CLI (add/ps/start/stop/logs) works on this box same as on a hub');
     console.log(`Logs: ${daemon.logFile('agent')}`);
-    console.log('Use `latch down` to stop it, `latch status` to check on it.');
+    console.log('Use `latch down` to stop it, `latch status` to check on it');
   });
 
 program

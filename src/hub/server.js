@@ -81,7 +81,7 @@ function startInternal() {
   const server = https.createServer({ key, cert }, app);
   handleListenError(
     server,
-    "If `latch up` is already running on this box, you don't need `latch join` here too - the hub already has full local CLI access. `latch join` is for a *different* server than the one running the hub.",
+    "if `latch up` is already running on this server, you don't need `latch join` here too - the hub already has full CLI access. `latch join` is for a *different* server than the one running the hub",
   );
   server.listen(config.hubPort);
   return server;

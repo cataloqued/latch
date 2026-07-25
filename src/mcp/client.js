@@ -22,7 +22,7 @@ function request({ url, token, fingerprint }, method, urlPath, body) {
           const actual = cert?.fingerprint256?.toLowerCase();
           if (!actual || actual !== fingerprint.toLowerCase()) {
             req.destroy();
-            reject(new Error('certificate fingerprint mismatch - refusing to talk to this host'));
+            reject(new Error('certificate fingerprint mismatch - refusing to talk to host'));
             return;
           }
         }

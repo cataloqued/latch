@@ -8,6 +8,10 @@ const sessions = require('../src/core/sessions');
 const localApi = require('../src/cli/localClient');
 const { primaryAddress } = require('../src/cli/net');
 
+function underline(text) {
+  return [...text].map((ch) => ch + '̲').join('');
+}
+
 const program = new Command();
 program
   .name('latch')
@@ -31,14 +35,13 @@ program
       const { code } = pairing.issue();
       const link = `${base}/pair?code=${code}`;
       console.log('');
-      console.log('Open this link to use pair and use Latch');
-      console.log('');
+      console.log(underline('Open this link to use pair and use Latch:'));
       console.log(`  ${link}`);
       console.log('');
       console.log('');
-      console.log(`  (use ${code}) at ${base}/pair if you want to use Latch on another device`);
+      console.log(`  (use code ${code} at ${base}/pair if you want to use Latch on another device)`);
       console.log('');
-      console.log("(this also prints on SSH login once you run `latch hook install`)");
+      console.log("(the link url prints automatically on SSH login once you run `latch hook install`)");
       promptOpenBrowser(link);
     }
   });

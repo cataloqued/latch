@@ -4,207 +4,1075 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <style>
   :root {
-    --bg: #0a0e13; --panel: #0e141b; --panel-2: #0c1219; --rule: #1b2530;
-    --row-hover: #111922; --row-sel: #14202b; --text: #cdd6df; --dim: #5c6875; --faint: #38424e;
-    --green: #3fb950; --green-dk: #2ea043; --amber: #d29922; --red: #f85149; --cyan: #56b6c2;
+    --bg: #0a0e13;
+    --panel: #0e141b;
+    --panel-2: #0c1219;
+    --rule: #1b2530;
+    --row-hover: #111922;
+    --row-sel: #14202b;
+    --text: #cdd6df;
+    --dim: #5c6875;
+    --faint: #38424e;
+    --green: #3fb950;
+    --green-dk: #2ea043;
+    --amber: #d29922;
+    --red: #f85149;
+    --cyan: #56b6c2;
     --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
   }
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0; height: 100%; background: var(--bg); color: var(--text);
-    font-family: var(--mono); font-size: 14px; line-height: 1.5;
-    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+
+  * {
+    box-sizing: border-box;
   }
-  body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-  ::selection { background: rgba(63, 185, 80, 0.25); }
 
-  .bar { flex: 0 0 auto; display: flex; align-items: center; gap: 1.5ch; padding: 10px 20px; border-bottom: 1px solid var(--rule); }
-  .brand { color: var(--green); font-weight: 600; letter-spacing: 0.08em; }
-  .brand::before { content: "▪ "; color: var(--green-dk); }
-  .nav { display: flex; gap: 2px; margin-left: 0.5ch; }
-  .navbtn { background: none; border: none; color: var(--dim); font: inherit; cursor: pointer; padding: 4px 10px; border-bottom: 2px solid transparent; }
-  .navbtn:hover { color: var(--text); }
-  .navbtn.active { color: var(--green); border-bottom-color: var(--green); }
-  .counts { color: var(--dim); display: flex; gap: 1.5ch; margin-left: 1ch; }
-  .counts b { color: var(--text); font-weight: 500; }
-  .counts .up b { color: var(--green); }
-  .counts .down b { color: var(--red); }
-  .bar .spacer { flex: 1; }
-  .barbtn { background: none; border: 1px solid var(--rule); color: var(--dim); font: inherit; cursor: pointer; padding: 4px 10px; display: inline-flex; gap: 1ch; align-items: center; }
-  .barbtn:hover { color: var(--text); border-color: var(--dim); }
-  .kbd-hint { color: var(--faint); }
-  .kbd-hint kbd { font: inherit; color: var(--dim); border: 1px solid var(--rule); padding: 0 0.6ch; }
+  html,
+  body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
 
-  .body { flex: 1 1 auto; display: flex; min-height: 0; }
-  .list { flex: 1 1 auto; overflow-y: auto; padding: 8px 0 16px; }
-  .detail { flex: 0 0 380px; border-left: 1px solid var(--rule); background: var(--panel-2); overflow-y: auto; display: flex; flex-direction: column; }
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
 
-  .host { padding: 0 20px; }
-  .host + .host { margin-top: 6px; }
-  .host-head { display: flex; align-items: baseline; gap: 1.5ch; padding: 14px 0 8px; border-bottom: 1px solid var(--rule); }
-  .host-name { color: var(--text); font-weight: 600; }
-  .host-meta { margin-left: auto; color: var(--dim); display: flex; gap: 1.5ch; }
-  .host-meta .role { color: var(--faint); text-transform: uppercase; letter-spacing: 0.06em; font-size: 12px; }
-  .host-meta .net { color: var(--cyan); opacity: 0.8; }
-  .host-online { color: var(--green); }
-  .host-sys { padding: 4px 0 8px; color: var(--dim); font-size: 12.5px; letter-spacing: 0.02em; }
+  ::selection {
+    background: rgba(63, 185, 80, 0.25);
+  }
 
-  .rows { padding: 4px 0; }
-  .row { display: grid; grid-template-columns: 2.5ch 17ch 7ch 8ch 1fr 6ch 3ch; align-items: center; gap: 1ch; padding: 4px 8px; margin: 0 -8px; cursor: pointer; border-left: 2px solid transparent; }
-  .row:hover { background: var(--row-hover); }
-  .row.sel { background: var(--row-sel); border-left-color: var(--green); }
-  .row.sel .name { color: #fff; }
-  .marker { text-align: center; }
-  .name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .state { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
-  .port { color: var(--cyan); opacity: 0.85; }
-  .detail-col { color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .restarts { color: var(--faint); text-align: right; }
-  .restarts.warn { color: var(--amber); }
-  .git-dot { color: var(--amber); }
-  .rowlog { opacity: 0; background: none; border: none; color: var(--dim); cursor: pointer; font: inherit; padding: 0; text-align: center; }
-  .row:hover .rowlog { opacity: 1; }
-  .rowlog:hover { color: var(--green); }
+  .bar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 1.5ch;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--rule);
+  }
 
-  .s-run .marker, .s-run .state { color: var(--green); }
-  .s-stop .marker, .s-stop .state { color: var(--dim); }
-  .s-crash .marker, .s-crash .state { color: var(--red); }
-  .s-boot .marker, .s-boot .state { color: var(--amber); }
-  .s-crash .detail-col { color: var(--red); opacity: 0.75; }
-  .row.flash { animation: flash 0.5s ease-out; }
-  @keyframes flash { from { background: rgba(63,185,80,0.22); } to { background: var(--row-sel); } }
+  .brand {
+    color: var(--green);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
 
-  .d-head { padding: 18px 20px 14px; border-bottom: 1px solid var(--rule); }
-  .d-title { display: flex; align-items: baseline; gap: 1.5ch; }
-  .d-name { font-size: 18px; font-weight: 600; color: #fff; }
-  .d-status { margin-left: auto; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .d-host { color: var(--dim); margin-top: 4px; }
-  .d-host .net { color: var(--cyan); opacity: 0.8; }
-  .d-section { padding: 16px 20px; border-bottom: 1px solid var(--rule); }
-  .d-label { color: var(--faint); text-transform: uppercase; letter-spacing: 0.1em; font-size: 11px; margin-bottom: 12px; }
+  .brand::before {
+    content: "▪ ";
+    color: var(--green-dk);
+  }
 
-  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .btn { display: flex; align-items: center; justify-content: center; gap: 1ch; padding: 11px 12px; font: inherit; font-size: 14px; background: transparent; color: var(--text); border: 1px solid var(--rule); cursor: pointer; transition: background 0.12s, border-color 0.12s, color 0.12s; white-space: nowrap; }
-  .btn .g { font-size: 15px; }
-  .btn:hover { background: var(--row-hover); border-color: var(--dim); }
-  .btn:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
-  .btn.primary { color: var(--green); border-color: rgba(63,185,80,0.4); }
-  .btn.primary:hover { background: rgba(63,185,80,0.12); border-color: var(--green); }
-  .btn.warn { color: var(--amber); border-color: rgba(210,153,34,0.4); }
-  .btn.warn:hover { background: rgba(210,153,34,0.12); border-color: var(--amber); }
-  .btn.danger { color: var(--red); border-color: rgba(248,81,73,0.35); }
-  .btn.danger:hover { background: rgba(248,81,73,0.12); border-color: var(--red); }
-  .btn.wide { grid-column: 1 / -1; }
-  .btn:disabled { color: var(--faint); border-color: var(--rule); cursor: default; background: none; }
+  .nav {
+    display: flex;
+    gap: 2px;
+    margin-left: 0.5ch;
+  }
 
-  .kv { display: grid; grid-template-columns: 8ch 1fr; gap: 4px 1.5ch; }
-  .kv dt { color: var(--dim); }
-  .kv dd { margin: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kv dd .hash { color: var(--cyan); }
-  .kv dd .sub { color: var(--dim); }
-  .behind { color: var(--amber); }
-  .behind.zero { color: var(--green); }
-  .no-repo { color: var(--dim); }
-  .link-form { display: flex; gap: 8px; margin-top: 12px; }
-  .link-form input { flex: 1; background: var(--bg); border: 1px solid var(--rule); color: var(--text); font: inherit; padding: 9px 10px; outline: none; min-width: 0; }
-  .link-form input:focus { border-color: var(--dim); }
-  .link-form input::placeholder { color: var(--faint); }
+  .navbtn {
+    background: none;
+    border: none;
+    color: var(--dim);
+    font: inherit;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-bottom: 2px solid transparent;
+  }
+
+  .navbtn:hover {
+    color: var(--text);
+  }
+
+  .navbtn.active {
+    color: var(--green);
+    border-bottom-color: var(--green);
+  }
+
+  .counts {
+    color: var(--dim);
+    display: flex;
+    gap: 1.5ch;
+    margin-left: 1ch;
+  }
+
+  .counts b {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .counts .up b {
+    color: var(--green);
+  }
+
+  .counts .down b {
+    color: var(--red);
+  }
+
+  .bar .spacer {
+    flex: 1;
+  }
+
+  .barbtn {
+    background: none;
+    border: 1px solid var(--rule);
+    color: var(--dim);
+    font: inherit;
+    cursor: pointer;
+    padding: 4px 10px;
+    display: inline-flex;
+    gap: 1ch;
+    align-items: center;
+  }
+
+  .barbtn:hover {
+    color: var(--text);
+    border-color: var(--dim);
+  }
+
+  .kbd-hint {
+    color: var(--faint);
+  }
+
+  .kbd-hint kbd {
+    font: inherit;
+    color: var(--dim);
+    border: 1px solid var(--rule);
+    padding: 0 0.6ch;
+  }
+
+  .body {
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+  }
+
+  .list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 8px 0 16px;
+  }
+
+  .detail {
+    flex: 0 0 380px;
+    border-left: 1px solid var(--rule);
+    background: var(--panel-2);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .host {
+    padding: 0 20px;
+  }
+
+  .host+.host {
+    margin-top: 6px;
+  }
+
+  .host-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5ch;
+    padding: 14px 0 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .host-name {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .host-meta {
+    margin-left: auto;
+    color: var(--dim);
+    display: flex;
+    gap: 1.5ch;
+  }
+
+  .host-meta .role {
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 12px;
+  }
+
+  .host-meta .net {
+    color: var(--cyan);
+    opacity: 0.8;
+  }
+
+  .host-online {
+    color: var(--green);
+  }
+
+  .host-sys {
+    padding: 4px 0 8px;
+    color: var(--dim);
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+  }
+
+  .rows {
+    padding: 4px 0;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 2.5ch 17ch 7ch 8ch 1fr 6ch 3ch;
+    align-items: center;
+    gap: 1ch;
+    padding: 4px 8px;
+    margin: 0 -8px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+  }
+
+  .row:hover {
+    background: var(--row-hover);
+  }
+
+  .row.sel {
+    background: var(--row-sel);
+    border-left-color: var(--green);
+  }
+
+  .row.sel .name {
+    color: #fff;
+  }
+
+  .marker {
+    text-align: center;
+  }
+
+  .name {
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .state {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .port {
+    color: var(--cyan);
+    opacity: 0.85;
+  }
+
+  .detail-col {
+    color: var(--dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .restarts {
+    color: var(--faint);
+    text-align: right;
+  }
+
+  .restarts.warn {
+    color: var(--amber);
+  }
+
+  .git-dot {
+    color: var(--amber);
+  }
+
+  .rowlog {
+    opacity: 0;
+    background: none;
+    border: none;
+    color: var(--dim);
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-align: center;
+  }
+
+  .row:hover .rowlog {
+    opacity: 1;
+  }
+
+  .rowlog:hover {
+    color: var(--green);
+  }
+
+  .s-run .marker,
+  .s-run .state {
+    color: var(--green);
+  }
+
+  .s-stop .marker,
+  .s-stop .state {
+    color: var(--dim);
+  }
+
+  .s-crash .marker,
+  .s-crash .state {
+    color: var(--red);
+  }
+
+  .s-boot .marker,
+  .s-boot .state {
+    color: var(--amber);
+  }
+
+  .s-crash .detail-col {
+    color: var(--red);
+    opacity: 0.75;
+  }
+
+  .row.flash {
+    animation: flash 0.5s ease-out;
+  }
+
+  @keyframes flash {
+    from {
+      background: rgba(63, 185, 80, 0.22);
+    }
+
+    to {
+      background: var(--row-sel);
+    }
+  }
+
+  .d-head {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .d-title {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5ch;
+  }
+
+  .d-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .d-status {
+    margin-left: auto;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .d-host {
+    color: var(--dim);
+    margin-top: 4px;
+  }
+
+  .d-host .net {
+    color: var(--cyan);
+    opacity: 0.8;
+  }
+
+  .d-section {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .d-label {
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 11px;
+    margin-bottom: 12px;
+  }
+
+  .btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1ch;
+    padding: 11px 12px;
+    font: inherit;
+    font-size: 14px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--rule);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    white-space: nowrap;
+  }
+
+  .btn .g {
+    font-size: 15px;
+  }
+
+  .btn:hover {
+    background: var(--row-hover);
+    border-color: var(--dim);
+  }
+
+  .btn:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 1px;
+  }
+
+  .btn.primary {
+    color: var(--green);
+    border-color: rgba(63, 185, 80, 0.4);
+  }
+
+  .btn.primary:hover {
+    background: rgba(63, 185, 80, 0.12);
+    border-color: var(--green);
+  }
+
+  .btn.warn {
+    color: var(--amber);
+    border-color: rgba(210, 153, 34, 0.4);
+  }
+
+  .btn.warn:hover {
+    background: rgba(210, 153, 34, 0.12);
+    border-color: var(--amber);
+  }
+
+  .btn.danger {
+    color: var(--red);
+    border-color: rgba(248, 81, 73, 0.35);
+  }
+
+  .btn.danger:hover {
+    background: rgba(248, 81, 73, 0.12);
+    border-color: var(--red);
+  }
+
+  .btn.wide {
+    grid-column: 1 / -1;
+  }
+
+  .btn:disabled {
+    color: var(--faint);
+    border-color: var(--rule);
+    cursor: default;
+    background: none;
+  }
+
+  .kv {
+    display: grid;
+    grid-template-columns: 8ch 1fr;
+    gap: 4px 1.5ch;
+  }
+
+  .kv dt {
+    color: var(--dim);
+  }
+
+  .kv dd {
+    margin: 0;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .kv dd .hash {
+    color: var(--cyan);
+  }
+
+  .kv dd .sub {
+    color: var(--dim);
+  }
+
+  .behind {
+    color: var(--amber);
+  }
+
+  .behind.zero {
+    color: var(--green);
+  }
+
+  .no-repo {
+    color: var(--dim);
+  }
+
+  .link-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .link-form input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    color: var(--text);
+    font: inherit;
+    padding: 9px 10px;
+    outline: none;
+    min-width: 0;
+  }
+
+  .link-form input:focus {
+    border-color: var(--dim);
+  }
+
+  .link-form input::placeholder {
+    color: var(--faint);
+  }
 
   /* about */
-  .about { flex: 1 1 auto; overflow-y: auto; padding: 44px 20px; }
-  .about-inner { max-width: 620px; margin: 0 auto; }
-  .about h1 { font-size: 24px; color: var(--green); letter-spacing: 0.06em; margin: 0 0 6px; }
-  .about h1::before { content: "▪ "; color: var(--green-dk); }
-  .about .tag { color: var(--dim); margin: 0 0 32px; }
-  .about section { padding: 20px 0; border-top: 1px solid var(--rule); }
-  .about .lbl { color: var(--faint); text-transform: uppercase; letter-spacing: 0.1em; font-size: 11px; margin-bottom: 10px; }
-  .about p { margin: 0 0 8px; color: var(--text); }
-  .about .cyan { color: var(--cyan); }
-  .about .green { color: var(--green); }
-  .about .links { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .about {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 44px 20px;
+  }
 
-  .hcard { padding: 18px 0; border-top: 1px solid var(--rule); }
-  .hcard:first-child { border-top: none; padding-top: 0; }
-  .hcard-head { display: flex; align-items: baseline; gap: 1.5ch; margin-bottom: 12px; }
-  .hcard-head .name { color: var(--text); font-weight: 600; font-size: 15px; }
-  .hcard-head .role { color: var(--faint); text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; }
-  .hcard-head .online { color: var(--green); margin-left: auto; font-size: 12px; }
-  .hcard-head .offline { color: var(--dim); margin-left: auto; font-size: 12px; }
-  .hrow { display: grid; grid-template-columns: 10ch 1fr 13ch; align-items: center; gap: 1.5ch; padding: 3px 0; font-size: 12.5px; }
-  .hrow .k { color: var(--dim); }
-  .hrow .v { color: var(--text); text-align: right; white-space: nowrap; }
-  .hbar-track { height: 5px; background: var(--rule); position: relative; }
-  .hbar-fill { height: 100%; background: var(--green); }
-  .hbar-fill.warn { background: var(--amber); }
-  .hbar-fill.crit { background: var(--red); }
-  .hmeta { color: var(--dim); font-size: 12.5px; margin-bottom: 10px; }
-  .hmeta .gpuname { color: var(--cyan); }
-  .hcard .empty { color: var(--dim); font-size: 12.5px; }
+  .about-inner {
+    max-width: 620px;
+    margin: 0 auto;
+  }
 
-  .cmdline { flex: 0 0 auto; display: flex; align-items: center; gap: 1ch; padding: 11px 20px; border-top: 1px solid var(--rule); background: var(--panel); }
-  .prompt { color: var(--green); }
-  .cmdline input { flex: 1; background: none; border: none; outline: none; color: var(--text); font: inherit; caret-color: var(--green); }
-  .cmdline input::placeholder { color: var(--faint); }
+  .about h1 {
+    font-size: 24px;
+    color: var(--green);
+    letter-spacing: 0.06em;
+    margin: 0 0 6px;
+  }
 
-  .overlay { position: fixed; inset: 0; background: rgba(5, 8, 11, 0.72); display: none; z-index: 10; }
-  .overlay.show { display: block; }
-  .palette { position: absolute; top: 14vh; left: 50%; transform: translateX(-50%); width: min(560px, 92vw); background: var(--panel); border: 1px solid var(--rule); box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
-  .palette-input { display: flex; align-items: center; gap: 1ch; padding: 12px 16px; border-bottom: 1px solid var(--rule); }
-  .palette-input .prompt { color: var(--green); }
-  .palette-input input { flex: 1; background: none; border: none; outline: none; color: var(--text); font: inherit; caret-color: var(--green); }
-  .palette-list { max-height: 46vh; overflow-y: auto; }
-  .pcmd { display: flex; align-items: baseline; gap: 1.5ch; padding: 8px 16px; border-left: 2px solid transparent; cursor: pointer; }
-  .pcmd.sel { background: var(--row-sel); border-left-color: var(--green); }
-  .pcmd .key { color: var(--green); width: 9ch; }
-  .pcmd .desc { color: var(--text); }
-  .pcmd .arg { color: var(--dim); margin-left: auto; }
+  .about h1::before {
+    content: "▪ ";
+    color: var(--green-dk);
+  }
 
-  .keys-list { padding: 10px 0; }
-  .keyrow { display: grid; grid-template-columns: 13ch 1fr; gap: 1.5ch; padding: 6px 18px; }
-  .keyrow .k { color: var(--green); }
-  .keyrow .d { color: var(--dim); }
+  .about .tag {
+    color: var(--dim);
+    margin: 0 0 32px;
+  }
 
-  .modal { position: absolute; top: 12vh; left: 50%; transform: translateX(-50%); width: min(480px, 92vw); background: var(--panel); border: 1px solid var(--rule); box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
-  .modal-head { display: flex; align-items: center; gap: 1.5ch; padding: 12px 18px; border-bottom: 1px solid var(--rule); }
-  .modal-head .t { color: var(--green); font-weight: 600; }
-  .modal-body { padding: 18px; }
-  .field { margin-bottom: 14px; }
-  .field label { display: block; color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
-  .field input, .field select { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--rule); color: var(--text); font: inherit; padding: 9px 10px; outline: none; }
-  .field input:focus, .field select:focus { border-color: var(--dim); }
-  .field input::placeholder { color: var(--faint); }
-  .field-row { display: flex; gap: 12px; }
-  .field-row .field { flex: 1; }
-  .field-check { display: flex; align-items: center; gap: 1ch; color: var(--text); font-size: 13px; }
-  .modal-err { color: var(--red); font-size: 12.5px; margin-top: -4px; margin-bottom: 12px; }
-  .join-cmd { background: var(--bg); border: 1px solid var(--rule); color: var(--green); padding: 12px; font-size: 12.5px; word-break: break-all; user-select: all; margin-bottom: 12px; }
+  .about section {
+    padding: 20px 0;
+    border-top: 1px solid var(--rule);
+  }
 
-  .logbox { position: absolute; inset: 6vh 6vw; background: var(--panel); border: 1px solid var(--rule); display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
-  .log-head { flex: 0 0 auto; display: flex; align-items: center; gap: 1.5ch; padding: 12px 18px; border-bottom: 1px solid var(--rule); }
-  .log-head .t { color: var(--green); font-weight: 600; }
-  .log-head .sub { color: var(--dim); }
-  .log-body { flex: 1 1 auto; overflow-y: auto; padding: 12px 18px; font-size: 13px; line-height: 1.6; }
-  .log-body .ln { display: flex; gap: 1.5ch; white-space: pre-wrap; }
-  .log-body .ts { color: var(--faint); flex: 0 0 auto; }
-  .log-body .lv { flex: 0 0 5ch; }
-  .lv-inf { color: var(--dim); } .lv-wrn { color: var(--amber); } .lv-err { color: var(--red); } .lv-ok { color: var(--green); }
-  .log-body .msg { color: var(--text); }
+  .about .lbl {
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
 
-  .toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 20; }
-  .toast { display: flex; align-items: center; gap: 1ch; padding: 10px 14px; background: var(--panel); border: 1px solid var(--rule); border-left-width: 2px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); animation: slidein 0.16s ease-out; }
-  .toast.ok { border-left-color: var(--green); } .toast.ok .g { color: var(--green); }
-  .toast.info { border-left-color: var(--cyan); } .toast.info .g { color: var(--cyan); }
-  .toast .g { flex: 0 0 auto; }
-  @keyframes slidein { from { transform: translateX(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .about p {
+    margin: 0 0 8px;
+    color: var(--text);
+  }
 
-  .list::-webkit-scrollbar, .detail::-webkit-scrollbar, .about::-webkit-scrollbar, .log-body::-webkit-scrollbar, .palette-list::-webkit-scrollbar { width: 10px; }
-  .list::-webkit-scrollbar-thumb, .detail::-webkit-scrollbar-thumb, .about::-webkit-scrollbar-thumb, .log-body::-webkit-scrollbar-thumb, .palette-list::-webkit-scrollbar-thumb { background: var(--rule); }
+  .about .cyan {
+    color: var(--cyan);
+  }
+
+  .about .green {
+    color: var(--green);
+  }
+
+  .about .links {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .hcard {
+    padding: 18px 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .hcard:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .hcard-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5ch;
+    margin-bottom: 12px;
+  }
+
+  .hcard-head .name {
+    color: var(--text);
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .hcard-head .role {
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+  }
+
+  .hcard-head .online {
+    color: var(--green);
+    margin-left: auto;
+    font-size: 12px;
+  }
+
+  .hcard-head .offline {
+    color: var(--dim);
+    margin-left: auto;
+    font-size: 12px;
+  }
+
+  .hrow {
+    display: grid;
+    grid-template-columns: 10ch 1fr 13ch;
+    align-items: center;
+    gap: 1.5ch;
+    padding: 3px 0;
+    font-size: 12.5px;
+  }
+
+  .hrow .k {
+    color: var(--dim);
+  }
+
+  .hrow .v {
+    color: var(--text);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .hbar-track {
+    height: 5px;
+    background: var(--rule);
+    position: relative;
+  }
+
+  .hbar-fill {
+    height: 100%;
+    background: var(--green);
+  }
+
+  .hbar-fill.warn {
+    background: var(--amber);
+  }
+
+  .hbar-fill.crit {
+    background: var(--red);
+  }
+
+  .hmeta {
+    color: var(--dim);
+    font-size: 12.5px;
+    margin-bottom: 10px;
+  }
+
+  .hmeta .gpuname {
+    color: var(--cyan);
+  }
+
+  .hcard .empty {
+    color: var(--dim);
+    font-size: 12.5px;
+  }
+
+  .cmdline {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 1ch;
+    padding: 11px 20px;
+    border-top: 1px solid var(--rule);
+    background: var(--panel);
+  }
+
+  .prompt {
+    color: var(--green);
+  }
+
+  .cmdline input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font: inherit;
+    caret-color: var(--green);
+  }
+
+  .cmdline input::placeholder {
+    color: var(--faint);
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 8, 11, 0.72);
+    display: none;
+    z-index: 10;
+  }
+
+  .overlay.show {
+    display: block;
+  }
+
+  .palette {
+    position: absolute;
+    top: 14vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(560px, 92vw);
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  }
+
+  .palette-input {
+    display: flex;
+    align-items: center;
+    gap: 1ch;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .palette-input .prompt {
+    color: var(--green);
+  }
+
+  .palette-input input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font: inherit;
+    caret-color: var(--green);
+  }
+
+  .palette-list {
+    max-height: 46vh;
+    overflow-y: auto;
+  }
+
+  .pcmd {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5ch;
+    padding: 8px 16px;
+    border-left: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .pcmd.sel {
+    background: var(--row-sel);
+    border-left-color: var(--green);
+  }
+
+  .pcmd .key {
+    color: var(--green);
+    width: 9ch;
+  }
+
+  .pcmd .desc {
+    color: var(--text);
+  }
+
+  .pcmd .arg {
+    color: var(--dim);
+    margin-left: auto;
+  }
+
+  .keys-list {
+    padding: 10px 0;
+  }
+
+  .keyrow {
+    display: grid;
+    grid-template-columns: 13ch 1fr;
+    gap: 1.5ch;
+    padding: 6px 18px;
+  }
+
+  .keyrow .k {
+    color: var(--green);
+  }
+
+  .keyrow .d {
+    color: var(--dim);
+  }
+
+  .modal {
+    position: absolute;
+    top: 12vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(480px, 92vw);
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  }
+
+  .modal-head {
+    display: flex;
+    align-items: center;
+    gap: 1.5ch;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .modal-head .t {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .modal-body {
+    padding: 18px;
+  }
+
+  .field {
+    margin-bottom: 14px;
+  }
+
+  .field label {
+    display: block;
+    color: var(--dim);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .field input,
+  .field select {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    color: var(--text);
+    font: inherit;
+    padding: 9px 10px;
+    outline: none;
+  }
+
+  .field input:focus,
+  .field select:focus {
+    border-color: var(--dim);
+  }
+
+  .field input::placeholder {
+    color: var(--faint);
+  }
+
+  .field-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .field-row .field {
+    flex: 1;
+  }
+
+  .field-check {
+    display: flex;
+    align-items: center;
+    gap: 1ch;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  .modal-err {
+    color: var(--red);
+    font-size: 12.5px;
+    margin-top: -4px;
+    margin-bottom: 12px;
+  }
+
+  .join-cmd {
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    color: var(--green);
+    padding: 12px;
+    font-size: 12.5px;
+    word-break: break-all;
+    user-select: all;
+    margin-bottom: 12px;
+  }
+
+  .logbox {
+    position: absolute;
+    inset: 6vh 6vw;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  }
+
+  .log-head {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 1.5ch;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .log-head .t {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .log-head .sub {
+    color: var(--dim);
+  }
+
+  .log-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 12px 18px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .log-body .ln {
+    display: flex;
+    gap: 1.5ch;
+    white-space: pre-wrap;
+  }
+
+  .log-body .ts {
+    color: var(--faint);
+    flex: 0 0 auto;
+  }
+
+  .log-body .lv {
+    flex: 0 0 5ch;
+  }
+
+  .lv-inf {
+    color: var(--dim);
+  }
+
+  .lv-wrn {
+    color: var(--amber);
+  }
+
+  .lv-err {
+    color: var(--red);
+  }
+
+  .lv-ok {
+    color: var(--green);
+  }
+
+  .log-body .msg {
+    color: var(--text);
+  }
+
+  .toasts {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 20;
+  }
+
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 1ch;
+    padding: 10px 14px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-left-width: 2px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    animation: slidein 0.16s ease-out;
+  }
+
+  .toast.ok {
+    border-left-color: var(--green);
+  }
+
+  .toast.ok .g {
+    color: var(--green);
+  }
+
+  .toast.info {
+    border-left-color: var(--cyan);
+  }
+
+  .toast.info .g {
+    color: var(--cyan);
+  }
+
+  .toast .g {
+    flex: 0 0 auto;
+  }
+
+  @keyframes slidein {
+    from {
+      transform: translateX(12px);
+      opacity: 0;
+    }
+
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+
+  .list::-webkit-scrollbar,
+  .detail::-webkit-scrollbar,
+  .about::-webkit-scrollbar,
+  .log-body::-webkit-scrollbar,
+  .palette-list::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .list::-webkit-scrollbar-thumb,
+  .detail::-webkit-scrollbar-thumb,
+  .about::-webkit-scrollbar-thumb,
+  .log-body::-webkit-scrollbar-thumb,
+  .palette-list::-webkit-scrollbar-thumb {
+    background: var(--rule);
+  }
 
   @media (max-width: 860px) {
-    .body { flex-direction: column; }
-    .detail { flex: 0 0 auto; border-left: none; border-top: 1px solid var(--rule); max-height: 50vh; }
+    .body {
+      flex-direction: column;
+    }
+
+    .detail {
+      flex: 0 0 auto;
+      border-left: none;
+      border-top: 1px solid var(--rule);
+      max-height: 50vh;
+    }
   }
-  @media (prefers-reduced-motion: reduce) { .row.flash, .toast { animation: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+
+    .row.flash,
+    .toast {
+      animation: none;
+    }
+  }
 </style>
 
 <div class="bar">
@@ -247,7 +1115,7 @@
       <p>No Latch cloud. Your browser just talks to your server - nothing goes through us, because there is no us.</p>
     </section>
 
-   
+
 
     <section>
       <div class="lbl">trust in the community</div>
@@ -258,9 +1126,14 @@
       <div class="lbl">made by</div>
       <p><span class="cyan">cataloqued</span></p>
       <div class="links">
-        <button class="btn" onclick="window.open('https://github.com/cataloqued/latch','_blank')"><span class="g">↗</span> GitHub</button>
-        <button class="btn" onclick="window.open('https://github.com/cataloqued/latch/blob/main/LICENSE','_blank')"><span class="g">§</span> License</button>
-        <button class="btn" onclick="window.open('https://github.com/cataloqued/latch/blob/main/docs/DESIGN.md','_blank')"><span class="g">▤</span> Docs</button>
+        <button class="btn" onclick="window.open('https://github.com/cataloqued/latch','_blank')"><span
+            class="g">↗</span> GitHub</button>
+        <button class="btn"
+          onclick="window.open('https://github.com/cataloqued/latch/blob/main/LICENSE','_blank')"><span
+            class="g">§</span> License</button>
+        <button class="btn"
+          onclick="window.open('https://github.com/cataloqued/latch/blob/main/docs/DESIGN.md','_blank')"><span
+            class="g">▤</span> Docs</button>
       </div>
     </section>
   </div>
@@ -268,20 +1141,23 @@
 
 <div class="cmdline">
   <span class="prompt">$</span>
-  <input id="cmd" type="text" spellcheck="false" autocomplete="off" placeholder="restart api   ·   logs worker   ·   / to search" />
+  <input id="cmd" type="text" spellcheck="false" autocomplete="off"
+    placeholder="restart api   ·   logs worker   ·   / to search" />
   <span class="kbd-hint" style="white-space:nowrap"><kbd>?</kbd> keybind help</span>
 </div>
 
 <div class="overlay" id="ovPalette">
   <div class="palette">
-    <div class="palette-input"><span class="prompt">›</span><input id="pInput" type="text" spellcheck="false" autocomplete="off" placeholder="type a command…" /></div>
+    <div class="palette-input"><span class="prompt">›</span><input id="pInput" type="text" spellcheck="false"
+        autocomplete="off" placeholder="type a command…" /></div>
     <div class="palette-list" id="pList"></div>
   </div>
 </div>
 
 <div class="overlay" id="ovKeys">
   <div class="palette" style="top:16vh">
-    <div class="palette-input"><span class="prompt">⌨</span><span style="color:var(--text)">keyboard</span><button class="btn" style="margin-left:auto;padding:4px 10px" onclick="closeKeys()">close <kbd>esc</kbd></button></div>
+    <div class="palette-input"><span class="prompt">⌨</span><span style="color:var(--text)">keyboard</span><button
+        class="btn" style="margin-left:auto;padding:4px 10px" onclick="closeKeys()">close <kbd>esc</kbd></button></div>
     <div class="keys-list">
       <div class="keyrow"><span class="k">j / k · ↑ / ↓</span><span class="d">move selection</span></div>
       <div class="keyrow"><span class="k">r</span><span class="d">restart service</span></div>
@@ -297,23 +1173,32 @@
 
 <div class="overlay" id="ovLogs">
   <div class="logbox">
-    <div class="log-head"><span class="t">logs</span><span class="sub" id="logSub">api · vps-1.fra</span><button class="btn" style="margin-left:auto;padding:4px 10px" onclick="copyLogs()"><span class="g">⧉</span> copy <kbd>c</kbd></button><button class="btn" style="padding:4px 10px" onclick="closeLogs()"><span class="g">▤</span> close <kbd>q</kbd></button></div>
+    <div class="log-head"><span class="t">logs</span><span class="sub" id="logSub">api · vps-1.fra</span><button
+        class="btn" style="margin-left:auto;padding:4px 10px" onclick="copyLogs()"><span class="g">⧉</span> copy
+        <kbd>c</kbd></button><button class="btn" style="padding:4px 10px" onclick="closeLogs()"><span class="g">▤</span>
+        close <kbd>q</kbd></button></div>
     <div class="log-body" id="logBody"></div>
   </div>
 </div>
 
 <div class="overlay" id="ovAddProcess">
   <div class="modal">
-    <div class="modal-head"><span class="t">add process</span><button class="btn" style="margin-left:auto;padding:4px 10px" onclick="closeAddProcess()">close <kbd>esc</kbd></button></div>
+    <div class="modal-head"><span class="t">add process</span><button class="btn"
+        style="margin-left:auto;padding:4px 10px" onclick="closeAddProcess()">close <kbd>esc</kbd></button></div>
     <div class="modal-body">
-      <div class="field"><label>name</label><input id="apName" placeholder="worker" spellcheck="false" autocomplete="off" /></div>
-      <div class="field"><label>command</label><input id="apCommand" placeholder="node server.js" spellcheck="false" autocomplete="off" /></div>
+      <div class="field"><label>name</label><input id="apName" placeholder="worker" spellcheck="false"
+          autocomplete="off" /></div>
+      <div class="field"><label>command</label><input id="apCommand" placeholder="node server.js" spellcheck="false"
+          autocomplete="off" /></div>
       <div class="field-row">
-        <div class="field"><label>working dir <span style="opacity:.6">(optional)</span></label><input id="apCwd" placeholder="/home/you/app" spellcheck="false" autocomplete="off" /></div>
-        <div class="field"><label>port <span style="opacity:.6">(optional)</span></label><input id="apPort" placeholder="3000" inputmode="numeric" /></div>
+        <div class="field"><label>working dir <span style="opacity:.6">(optional)</span></label><input id="apCwd"
+            placeholder="/home/you/app" spellcheck="false" autocomplete="off" /></div>
+        <div class="field"><label>port <span style="opacity:.6">(optional)</span></label><input id="apPort"
+            placeholder="3000" inputmode="numeric" /></div>
       </div>
       <div class="field"><label>run on</label><select id="apTarget"></select></div>
-      <div class="field"><label class="field-check"><input id="apAutorestart" type="checkbox" style="width:auto" /> autorestart on crash</label></div>
+      <div class="field"><label class="field-check"><input id="apAutorestart" type="checkbox" style="width:auto" />
+          autorestart on crash</label></div>
       <div class="modal-err" id="apErr" style="display:none"></div>
       <button class="btn primary wide" onclick="submitAddProcess()"><span class="g">+</span> Add process</button>
     </div>
@@ -322,11 +1207,14 @@
 
 <div class="overlay" id="ovAddServer">
   <div class="modal">
-    <div class="modal-head"><span class="t">add server</span><button class="btn" style="margin-left:auto;padding:4px 10px" onclick="closeAddServer()">close <kbd>esc</kbd></button></div>
+    <div class="modal-head"><span class="t">add server</span><button class="btn"
+        style="margin-left:auto;padding:4px 10px" onclick="closeAddServer()">close <kbd>esc</kbd></button></div>
     <div class="modal-body" id="asBody">
-      <div class="field"><label>name</label><input id="asName" placeholder="vps-2.fra" spellcheck="false" autocomplete="off" /></div>
+      <div class="field"><label>name</label><input id="asName" placeholder="vps-2.fra" spellcheck="false"
+          autocomplete="off" /></div>
       <div class="modal-err" id="asErr" style="display:none"></div>
-      <button class="btn primary wide" onclick="generateJoinCommand()"><span class="g">▹</span> Generate join command</button>
+      <button class="btn primary wide" onclick="generateJoinCommand()"><span class="g">▹</span> Generate join
+        command</button>
       <div id="asResult"></div>
     </div>
   </div>
@@ -371,7 +1259,7 @@
     const ct = res.headers.get("content-type") || "";
     if (!res.ok) {
       let msg = text;
-      try { msg = JSON.parse(text).error || msg; } catch {}
+      try { msg = JSON.parse(text).error || msg; } catch { }
       throw new Error(msg || res.statusText);
     }
     return ct.includes("application/json") ? (text ? JSON.parse(text) : null) : text;
@@ -551,7 +1439,7 @@
     const fl = $("list");
     fl.innerHTML = "";
     if (!fleet.length || !fleet.some((h) => h.procs.length)) {
-      fl.innerHTML = '<div style="padding:40px 20px;color:var(--dim)">No processes yet - Add one with <span style="color:var(--text)">latch add &lt;name&gt; -- &lt;command&gt;</span></div>';
+      fl.innerHTML = '<div style="padding:40px 20px;color:var(--dim)">No processes yet - use the <span style="color:var(--text)">+ process</span> button above, or <span style="color:var(--text)">latch start &lt;command...&gt; --name &lt;name&gt;</span></div>';
       return;
     }
     let idx = 0;
@@ -613,43 +1501,43 @@
         const behindTxt = cached.behind > 0 ? "⇣ " + cached.behind + " behind" : "✓ up to date";
         git =
           '<div class="d-section" id="gitSection"><div class="d-label">git</div><dl class="kv">' +
-            '<dt>repo</dt><dd>' + cached.repo + '</dd>' +
-            '<dt>branch</dt><dd>' + cached.branch + ' · <span class="' + behindCls + '">' + behindTxt + '</span></dd>' +
-            '<dt>commit</dt><dd><span class="hash">' + cached.hash + '</span> ' + cached.message + '</dd>' +
-            '<dt></dt><dd><span class="sub">' + cached.when + '</span></dd></dl>' +
-            '<div class="btns" style="margin-top:14px">' +
-              '<button class="btn primary" onclick="act(\'pull\')"><span class="g">⤓</span> Pull</button>' +
-              '<button class="btn primary" onclick="act(\'pullreload\')"><span class="g">⤓</span> Pull &amp; reload</button>' +
-            '</div></div>';
+          '<dt>repo</dt><dd>' + cached.repo + '</dd>' +
+          '<dt>branch</dt><dd>' + cached.branch + ' · <span class="' + behindCls + '">' + behindTxt + '</span></dd>' +
+          '<dt>commit</dt><dd><span class="hash">' + cached.hash + '</span> ' + cached.message + '</dd>' +
+          '<dt></dt><dd><span class="sub">' + cached.when + '</span></dd></dl>' +
+          '<div class="btns" style="margin-top:14px">' +
+          '<button class="btn primary" onclick="act(\'pull\')"><span class="g">⤓</span> Pull</button>' +
+          '<button class="btn primary" onclick="act(\'pullreload\')"><span class="g">⤓</span> Pull &amp; reload</button>' +
+          '</div></div>';
       } else {
         git =
           '<div class="d-section" id="gitSection"><div class="d-label">git</div>' +
-            '<div class="no-repo">No repo linked - paste your repo to link</div>' +
-            '<div class="link-form">' +
-              '<input id="repoInput" placeholder="github.com/you/repo" spellcheck="false" autocomplete="off" />' +
-              '<button class="btn primary" onclick="linkRepo()"><span class="g">◆</span> Link</button>' +
-            '</div></div>';
+          '<div class="no-repo">No repo linked - paste your repo to link</div>' +
+          '<div class="link-form">' +
+          '<input id="repoInput" placeholder="github.com/you/repo" spellcheck="false" autocomplete="off" />' +
+          '<button class="btn primary" onclick="linkRepo()"><span class="g">◆</span> Link</button>' +
+          '</div></div>';
       }
     }
 
     $("detail").innerHTML =
       '<div class="d-head"><div class="d-title"><span class="d-name">' + p.name + '</span>' +
-        '<span class="d-status ' + SCLASS[p.state] + '"><span class="state">' + GLYPH[p.state] + ' ' + p.state + '</span></span></div>' +
-        '<div class="d-host">' + h.host + ' · ' + h.role + (h.net ? ' · <span class="net">' + h.net + '</span>' : '') + '</div></div>' +
+      '<span class="d-status ' + SCLASS[p.state] + '"><span class="state">' + GLYPH[p.state] + ' ' + p.state + '</span></span></div>' +
+      '<div class="d-host">' + h.host + ' · ' + h.role + (h.net ? ' · <span class="net">' + h.net + '</span>' : '') + '</div></div>' +
       '<div class="d-section"><div class="d-label">actions</div><div class="btns">' +
-        '<button class="btn primary" onclick="act(\'restart\')"><span class="g">↻</span> Restart</button>' +
-        '<button class="btn primary" onclick="act(\'reload\')"><span class="g">⟳</span> Reload</button>' +
-        startStop +
-        '<button class="btn" ' + (h.remote ? 'disabled title="not available for remote agents yet"' : 'onclick="openLogs()"') + '><span class="g">▤</span> Logs</button>' +
-        '<button class="btn danger wide" onclick="removeClicked(event, \'' + p.name.replace(/'/g, "\\'") + '\')" title="hold shift to skip confirmation"><span class="g">⌦</span> Remove</button>' +
+      '<button class="btn primary" onclick="act(\'restart\')"><span class="g">↻</span> Restart</button>' +
+      '<button class="btn primary" onclick="act(\'reload\')"><span class="g">⟳</span> Reload</button>' +
+      startStop +
+      '<button class="btn" ' + (h.remote ? 'disabled title="not available for remote agents yet"' : 'onclick="openLogs()"') + '><span class="g">▤</span> Logs</button>' +
+      '<button class="btn danger wide" onclick="removeClicked(event, \'' + p.name.replace(/'/g, "\\'") + '\')" title="hold shift to skip confirmation"><span class="g">⌦</span> Remove</button>' +
       '</div></div>' +
       git +
       '<div class="d-section" style="border-bottom:none"><div class="d-label">info</div><dl class="kv">' +
-        '<dt>pid</dt><dd>' + (p.pid || "-") + '</dd>' +
-        '<dt>port</dt><dd>' + (p.port ? '<span style="color:var(--cyan)">:' + p.port + '</span>' : "-") + '</dd>' +
-        '<dt>uptime</dt><dd>' + (p.up || "-") + '</dd>' +
-        '<dt>restarts</dt><dd>' + p.restarts + '</dd>' +
-        '<dt>cmd</dt><dd>' + p.cmd + '</dd></dl></div>';
+      '<dt>pid</dt><dd>' + (p.pid || "-") + '</dd>' +
+      '<dt>port</dt><dd>' + (p.port ? '<span style="color:var(--cyan)">:' + p.port + '</span>' : "-") + '</dd>' +
+      '<dt>uptime</dt><dd>' + (p.up || "-") + '</dd>' +
+      '<dt>restarts</dt><dd>' + p.restarts + '</dd>' +
+      '<dt>cmd</dt><dd>' + p.cmd + '</dd></dl></div>';
   }
 
   async function loadGit(key, name) {
@@ -683,7 +1571,7 @@
 
   function actionPath(h, name, action) {
     return h.remote ? "/agents/" + h.id + "/processes/" + encodeURIComponent(name) + "/" + action
-                     : "/processes/" + encodeURIComponent(name) + "/" + action;
+      : "/processes/" + encodeURIComponent(name) + "/" + action;
   }
 
   async function act(kind) {
@@ -773,7 +1661,7 @@
       body.innerHTML = "";
       text.split("\n").filter(Boolean).forEach((line) => appendLog(line));
       if (atBottom) body.scrollTop = body.scrollHeight;
-    } catch {}
+    } catch { }
   }
   function appendLog(line) {
     const body = $("logBody");
@@ -910,7 +1798,7 @@
     const list = filtered(q);
     if (pSel >= list.length) pSel = list.length - 1;
     if (pSel < 0) pSel = 0;
-    const el = $("pList");VideoColorSpace
+    const el = $("pList"); VideoColorSpace
     el.innerHTML = "";
     const p = selProc();
     list.forEach((c, i) => {

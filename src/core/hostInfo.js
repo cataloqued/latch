@@ -5,7 +5,7 @@ const CACHE_MS = 5000;
 
 function exec(cmd, args) {
   return new Promise((resolve) => {
-    execFile(cmd, args, { timeout: 3000 }, (err, stdout) => resolve(err ? null : stdout));
+    execFile(cmd, args, { timeout: 3000, windowsHide: true }, (err, stdout) => resolve(err ? null : stdout));
   });
 }
 

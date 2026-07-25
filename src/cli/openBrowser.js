@@ -3,7 +3,7 @@ const { exec } = require('child_process');
 function openBrowser(url) {
   const cmd =
     process.platform === 'win32' ? `start "" "${url}"` : process.platform === 'darwin' ? `open "${url}"` : `xdg-open "${url}"`;
-  exec(cmd, () => {});
+  exec(cmd, { windowsHide: true }, () => {});
 }
 
 function promptOpenBrowser(url, message = 'Press E̲N̲T̲E̲R̲ to open in your browser...') {

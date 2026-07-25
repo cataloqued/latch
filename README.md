@@ -57,6 +57,8 @@ Open the URL in your browser, enter the code, and your device is paired.
 
 **That is it.**
 
+Full walkthrough, every command, and troubleshooting: [user-guide.md](user-guide.md).
+
 ---
 
 ##  Why Latch?

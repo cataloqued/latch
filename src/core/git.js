@@ -4,7 +4,7 @@ const path = require('path');
 
 function run(cwd, args) {
   return new Promise((resolve, reject) => {
-    execFile('git', args, { cwd, timeout: 15000 }, (err, stdout) => {
+    execFile('git', args, { cwd, timeout: 15000, windowsHide: true }, (err, stdout) => {
       if (err) reject(err);
       else resolve(stdout.trim());
     });

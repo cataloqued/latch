@@ -50,6 +50,17 @@ function createApp() {
   return app;
 }
 
+function handleListenError(server, context) {
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${config.hubPort} is already in use on this box. ${context}`);
+    } else {
+      console.error(`Failed to start: ${err.message}`);
+    }
+    process.exit(1);
+  });
+}
+
 function start() {
   const { key, cert } = tls.ensureCert();
   const app = createApp();
@@ -57,6 +68,8 @@ function start() {
   const wss = new WebSocketServer({ server, path: '/agent/join' });
   attachAgentServer(wss);
 
+  server.on('error', () => {}); // ws re-emits the same error on wss below; avoid a double unhandled throw
+  handleListenError(wss, 'Is Latch already running? Check with `latch status`.');
   server.listen(config.hubPort);
   return server;
 }
@@ -66,6 +79,10 @@ function startInternal() {
   const app = express();
   app.use('/internal', requireLoopback, internal);
   const server = https.createServer({ key, cert }, app);
+  handleListenError(
+    server,
+    "If `latch up` is already running on this box, you don't need `latch join` here too - the hub already has full local CLI access. `latch join` is for a *different* server than the one running the hub.",
+  );
   server.listen(config.hubPort);
   return server;
 }

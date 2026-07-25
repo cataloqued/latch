@@ -4,17 +4,17 @@ Backend architecture as currently implemented. Not aspirational — if it's desc
 
 ## Command reference
 
-|
-| `latch up` - Start the hub (panel + API) on this server
+| `latch up` - Start the hub (panel + API) on this server, daemonized in the background
+| `latch down` - Stop the background hub or agent process
+| `latch status` - Check whether Latch is running on this server
 | `latch pair` - Print the current pairing link and one-time code
-| `latch token create [--label <name>]`  Create a join token for connecting another server as an agent
+| `latch token create [--label <name>]` - Create a join token for connecting another server as an agent
 | `latch token api [--label <name>]` - Create a long-lived API token (for scripts, the MCP server)
 | `latch sessions` - List paired browsers and API tokens
 | `latch sessions revoke <id>` - Revoke a session or token
-| `latch join <hubUrl> --token <t> --fingerprint <fp> [--name <name>]` - Run this server as an agent of the panel
+| `latch join <hubUrl> --token <t> --fingerprint <fp> [--name <name>]` - Run this server as an agent of the panel, daemonized in the background
 | `latch ps` - List processes managed on this server
-| `latch add <name> [--autorestart] [--port <n>] -- <command...>` - Register a new process
-| `latch start <name>` - Start a process
+| `latch start <command...> [--name <name>] [--autorestart] [--port <n>] [--agent <id>]` - Register and start a new process (or just start an existing one by name), e.g. `latch start index.js --name web`
 | `latch stop <name>` - Stop a process
 | `latch restart <name>` - Restart a process
 | `latch reload <name>` - Reloads the process (Starts a new one then removes the old one)
@@ -24,8 +24,6 @@ Backend architecture as currently implemented. Not aspirational — if it's desc
 | `latch agents` - List connected agents (servers)
 | `latch hook install` - Reprint the pairing link on every SSH login (Linux only)
 
-
-
 ## Trust model
 
 The only way to create a session is to have shell access to the machine (to read the pairing code) or to already hold a paired session or API token. There is no username/password. This is the same trust model as SSH: physical/shell access to the box is the credential.
@@ -34,7 +32,9 @@ The only way to create a session is to have shell access to the machine (to read
 
 - **Hub** — the box running `latch up`. Serves the panel and API over HTTPS, and terminates agent WebSocket connections.
 - **Agent** — a box running `latch join`. Connects outbound to the hub; the hub never connects to the agent. An agent behind NAT or a firewall needs no inbound ports open — only the hub needs to be reachable. An agent also runs its own loopback-only `/internal` server, identical in shape to the hub's, so the local `latch` CLI (`add`, `ps`, `start`, `stop`, `logs`, ...) works the same on an agent box as on a hub.
-- **CLI** — every `latch <command>` is a separate short-lived process. `up` and `join` stay running in the foreground; everything else runs, talks to whichever local `/internal` server owns that box (hub or agent), and exits.
+- **CLI** — every `latch <command>` is a separate short-lived process. `up` and `join` daemonize by default (see below); everything else runs, talks to whichever local `/internal` server owns that box (hub or agent), and exits.
+
+**Daemonization**: `latch up`/`latch join` spawn a detached child process (`--foreground`, an internal flag) that runs the actual server, write its PID to `~/.latch/{hub,agent}.pid`, and the parent exits once the child is confirmed alive — the terminal is free immediately, same shape as `pm2 start`. The child's stdout/stderr redirect to `~/.latch/logs/{hub,agent}.log` rather than the terminal. `latch down` reads the PID file and kills the whole process tree (`taskkill /T /F` on Windows, `kill` on the negative/group PID on POSIX, since the daemon is its own process group leader) — this matters because a hub's managed child processes would otherwise be orphaned by killing just the hub PID. `latch status` reports whether a PID file points at a still-live process. Running `up`/`join` again while already running refuses instead of hitting `EADDRINUSE`.
 
 ## Pairing
 
@@ -72,7 +72,9 @@ A single JSON file, `~/.latch/state.json`: sessions, join tokens, agents, proces
 
 Single-box process supervision: no clustering, no ecosystem file. Spawns a child process, captures stdout/stderr into a 2000-line in-memory ring buffer plus a log file on disk, and restarts with exponential backoff if `autorestart` is set. `latch ps` / `latch logs` / `latch start|stop|restart|reload` all go through the owning process's loopback-only `/internal` API — live process handles only exist in that process's memory, so nothing else can touch them directly.
 
-`port` is operator-supplied metadata only (`latch add web --port 3000 -- ...`). Latch does not bind, check, or verify it; it exists so the panel and `ps` can display what port a service is meant to be running on.
+`port` is operator-supplied metadata only (`latch start server.js --name web --port 3000`). Latch does not bind, check, or verify it; it exists so the panel and `ps` can display what port a service is meant to be running on.
+
+`start` also does light interpreter auto-detection by file extension (`.js`/`.mjs`/`.cjs` → `node`, `.py` → `python`, `.rb` → `ruby`, `.sh` → `bash`), so `latch start index.js` works without spelling out the interpreter. Anything without a recognized extension (or already the interpreter itself, e.g. `latch start node index.js`) is run exactly as given.
 
 **Log rotation**: a log file rotates to `.1` → `.2` → `.3` once it exceeds 5MB; the oldest backup is dropped. `latch logs` reads only the live ring buffer or the current file, not the rotated backups.
 

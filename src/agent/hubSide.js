@@ -69,10 +69,10 @@ function listAgents() {
   return Object.values(store.read().agents).map((a) => ({ ...a, online: liveSockets.has(a.id) }));
 }
 
-function sendCommand(agentId, action, name) {
+function sendCommand(agentId, action, name, extra = {}) {
   const ws = liveSockets.get(agentId);
   if (!ws || ws.readyState !== ws.OPEN) return false;
-  ws.send(JSON.stringify({ type: 'command', action, name }));
+  ws.send(JSON.stringify({ type: 'command', action, name, ...extra }));
   return true;
 }
 

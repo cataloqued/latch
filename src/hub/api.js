@@ -6,6 +6,8 @@ const processManager = require('../core/processManager');
 const git = require('../core/git');
 const hostInfo = require('../core/hostInfo');
 const store = require('../core/store');
+const tls = require('../core/tls');
+const joinTokens = require('../core/joinTokens');
 const { listAgents, sendCommand } = require('../agent/hubSide');
 const { primaryAddress } = require('../cli/net');
 
@@ -30,7 +32,18 @@ router.get('/session', (req, res) => {
 });
 
 router.get('/hub', async (_req, res) => {
-  res.json({ hostname: os.hostname(), address: primaryAddress(), host: await hostInfo.snapshot() });
+  const { cert } = tls.ensureCert();
+  res.json({
+    hostname: os.hostname(),
+    address: primaryAddress(),
+    fingerprint: tls.fingerprint(cert.toString()),
+    host: await hostInfo.snapshot(),
+  });
+});
+
+router.post('/tokens', async (req, res) => {
+  const token = await joinTokens.create(req.body?.label);
+  res.json({ token });
 });
 
 router.get('/sessions', (_req, res) => {
@@ -121,9 +134,23 @@ router.get('/agents', (_req, res) => {
   res.json(listAgents());
 });
 
+router.post('/agents/:id/processes', (req, res) => {
+  const { name, command, args, cwd, env, autorestart, port } = req.body || {};
+  if (!name || !command) {
+    res.status(400).json({ error: 'name and command required' });
+    return;
+  }
+  const config = { command, args, cwd, env, autorestart, port };
+  if (!sendCommand(req.params.id, 'add', name, { config })) {
+    res.status(404).json({ error: 'agent not connected' });
+    return;
+  }
+  res.json({ ok: true });
+});
+
 router.post('/agents/:id/processes/:name/:action', (req, res) => {
   const { id, name, action } = req.params;
-  if (!['start', 'stop', 'restart', 'reload'].includes(action)) {
+  if (!['start', 'stop', 'restart', 'reload', 'remove'].includes(action)) {
     res.status(400).json({ error: 'unknown action' });
     return;
   }

@@ -46,11 +46,18 @@ function connect({ hubUrl, token, name, fingerprint }) {
         return;
       }
       if (msg.type === 'command') {
-        if (msg.action === 'start') processManager.start(msg.name);
-        if (msg.action === 'stop') processManager.stop(msg.name);
-        if (msg.action === 'restart') processManager.restart(msg.name);
-        if (msg.action === 'reload') processManager.reload(msg.name);
-        setTimeout(reportList, 300);
+        (async () => {
+          if (msg.action === 'add') {
+            await processManager.add(msg.name, msg.config || {});
+            processManager.start(msg.name);
+          }
+          if (msg.action === 'start') processManager.start(msg.name);
+          if (msg.action === 'stop') processManager.stop(msg.name);
+          if (msg.action === 'restart') processManager.restart(msg.name);
+          if (msg.action === 'reload') processManager.reload(msg.name);
+          if (msg.action === 'remove') await processManager.remove(msg.name);
+          setTimeout(reportList, 300);
+        })();
       }
     });
 

@@ -87,9 +87,23 @@ router.get('/agents', (_req, res) => {
   res.json(listAgents());
 });
 
+router.post('/agents/:id/processes', (req, res) => {
+  const { name, command, args, cwd, env, autorestart, port } = req.body || {};
+  if (!name || !command) {
+    res.status(400).json({ error: 'name and command required' });
+    return;
+  }
+  const config = { command, args, cwd, env, autorestart, port };
+  if (!sendCommand(req.params.id, 'add', name, { config })) {
+    res.status(404).json({ error: 'agent not connected' });
+    return;
+  }
+  res.json({ ok: true });
+});
+
 router.post('/agents/:id/processes/:name/:action', (req, res) => {
   const { id, name, action } = req.params;
-  if (!['start', 'stop', 'restart', 'reload'].includes(action)) {
+  if (!['start', 'stop', 'restart', 'reload', 'remove'].includes(action)) {
     res.status(400).json({ error: 'unknown action' });
     return;
   }

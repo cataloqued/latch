@@ -130,9 +130,9 @@
   .hcard-head .role { color: var(--faint); text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; }
   .hcard-head .online { color: var(--green); margin-left: auto; font-size: 12px; }
   .hcard-head .offline { color: var(--dim); margin-left: auto; font-size: 12px; }
-  .hrow { display: grid; grid-template-columns: 10ch 1fr 8ch; align-items: center; gap: 1.5ch; padding: 3px 0; font-size: 12.5px; }
+  .hrow { display: grid; grid-template-columns: 10ch 1fr 13ch; align-items: center; gap: 1.5ch; padding: 3px 0; font-size: 12.5px; }
   .hrow .k { color: var(--dim); }
-  .hrow .v { color: var(--text); text-align: right; }
+  .hrow .v { color: var(--text); text-align: right; white-space: nowrap; }
   .hbar-track { height: 5px; background: var(--rule); position: relative; }
   .hbar-fill { height: 100%; background: var(--green); }
   .hbar-fill.warn { background: var(--amber); }
@@ -163,6 +163,21 @@
   .keyrow { display: grid; grid-template-columns: 13ch 1fr; gap: 1.5ch; padding: 6px 18px; }
   .keyrow .k { color: var(--green); }
   .keyrow .d { color: var(--dim); }
+
+  .modal { position: absolute; top: 12vh; left: 50%; transform: translateX(-50%); width: min(480px, 92vw); background: var(--panel); border: 1px solid var(--rule); box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
+  .modal-head { display: flex; align-items: center; gap: 1.5ch; padding: 12px 18px; border-bottom: 1px solid var(--rule); }
+  .modal-head .t { color: var(--green); font-weight: 600; }
+  .modal-body { padding: 18px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .field input, .field select { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--rule); color: var(--text); font: inherit; padding: 9px 10px; outline: none; }
+  .field input:focus, .field select:focus { border-color: var(--dim); }
+  .field input::placeholder { color: var(--faint); }
+  .field-row { display: flex; gap: 12px; }
+  .field-row .field { flex: 1; }
+  .field-check { display: flex; align-items: center; gap: 1ch; color: var(--text); font-size: 13px; }
+  .modal-err { color: var(--red); font-size: 12.5px; margin-top: -4px; margin-bottom: 12px; }
+  .join-cmd { background: var(--bg); border: 1px solid var(--rule); color: var(--green); padding: 12px; font-size: 12.5px; word-break: break-all; user-select: all; margin-bottom: 12px; }
 
   .logbox { position: absolute; inset: 6vh 6vw; background: var(--panel); border: 1px solid var(--rule); display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
   .log-head { flex: 0 0 auto; display: flex; align-items: center; gap: 1.5ch; padding: 12px 18px; border-bottom: 1px solid var(--rule); }
@@ -200,12 +215,14 @@
     <button class="navbtn" id="nav-about" onclick="showView('about')">about</button>
   </nav>
   <span class="counts" id="counts">
-    <span><b id="c-hosts">0</b> hosts</span>
+    <span id="c-hosts-wrap">no hosts</span>
     <span><b id="c-svc">0</b> svc</span>
     <span class="up"><b id="c-up">0</b> up</span>
     <span class="down"><b id="c-down">0</b> down</span>
   </span>
   <span class="spacer"></span>
+  <button class="barbtn" onclick="openAddProcess()"><span class="g">+</span> process</button>
+  <button class="barbtn" onclick="openAddServer()"><span class="g">+</span> server</button>
   <button class="barbtn" onclick="openKeys()"><span class="g">⌨</span> keys</button>
   <span class="kbd-hint"><kbd>⌘K</kbd> commands</span>
 </div>
@@ -252,7 +269,7 @@
 <div class="cmdline">
   <span class="prompt">$</span>
   <input id="cmd" type="text" spellcheck="false" autocomplete="off" placeholder="restart api   ·   logs worker   ·   / to search" />
-  <span class="kbd-hint" style="white-space:nowrap"><kbd>?</kbd> keys · click a service</span>
+  <span class="kbd-hint" style="white-space:nowrap"><kbd>?</kbd> keybind help</span>
 </div>
 
 <div class="overlay" id="ovPalette">
@@ -282,6 +299,49 @@
   <div class="logbox">
     <div class="log-head"><span class="t">logs</span><span class="sub" id="logSub">api · vps-1.fra</span><button class="btn" style="margin-left:auto;padding:4px 10px" onclick="copyLogs()"><span class="g">⧉</span> copy <kbd>c</kbd></button><button class="btn" style="padding:4px 10px" onclick="closeLogs()"><span class="g">▤</span> close <kbd>q</kbd></button></div>
     <div class="log-body" id="logBody"></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovAddProcess">
+  <div class="modal">
+    <div class="modal-head"><span class="t">add process</span><button class="btn" style="margin-left:auto;padding:4px 10px" onclick="closeAddProcess()">close <kbd>esc</kbd></button></div>
+    <div class="modal-body">
+      <div class="field"><label>name</label><input id="apName" placeholder="worker" spellcheck="false" autocomplete="off" /></div>
+      <div class="field"><label>command</label><input id="apCommand" placeholder="node server.js" spellcheck="false" autocomplete="off" /></div>
+      <div class="field-row">
+        <div class="field"><label>working dir <span style="opacity:.6">(optional)</span></label><input id="apCwd" placeholder="/home/you/app" spellcheck="false" autocomplete="off" /></div>
+        <div class="field"><label>port <span style="opacity:.6">(optional)</span></label><input id="apPort" placeholder="3000" inputmode="numeric" /></div>
+      </div>
+      <div class="field"><label>run on</label><select id="apTarget"></select></div>
+      <div class="field"><label class="field-check"><input id="apAutorestart" type="checkbox" style="width:auto" /> autorestart on crash</label></div>
+      <div class="modal-err" id="apErr" style="display:none"></div>
+      <button class="btn primary wide" onclick="submitAddProcess()"><span class="g">+</span> Add process</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovAddServer">
+  <div class="modal">
+    <div class="modal-head"><span class="t">add server</span><button class="btn" style="margin-left:auto;padding:4px 10px" onclick="closeAddServer()">close <kbd>esc</kbd></button></div>
+    <div class="modal-body" id="asBody">
+      <div class="field"><label>name</label><input id="asName" placeholder="vps-2.fra" spellcheck="false" autocomplete="off" /></div>
+      <div class="modal-err" id="asErr" style="display:none"></div>
+      <button class="btn primary wide" onclick="generateJoinCommand()"><span class="g">▹</span> Generate join command</button>
+      <div id="asResult"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovConfirm">
+  <div class="modal" style="width:min(380px,92vw)">
+    <div class="modal-head"><span class="t" id="cfTitle">confirm</span></div>
+    <div class="modal-body">
+      <p id="cfMsg" style="margin:0 0 18px;color:var(--text)"></p>
+      <div class="btns">
+        <button class="btn" onclick="closeConfirm(false)">Cancel</button>
+        <button class="btn danger" onclick="closeConfirm(true)">Confirm</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -373,7 +433,7 @@
       '<span class="' + (h.online ? "online" : "offline") + '">' + (h.online ? "online" : "offline") + '</span></div>';
 
     if (!h.sys) {
-      return '<div class="hcard">' + head + '<p class="empty">No stats reported yet.</p></div>';
+      return '<div class="hcard">' + head + '<p class="empty">No stats to show yet</p></div>';
     }
     const s = h.sys;
     const memPct = s.mem ? Math.round((s.mem.used / s.mem.total) * 100) : 0;
@@ -401,11 +461,11 @@
   function renderHost() {
     const el = $("hostBody");
     if (!fleet.length) {
-      el.innerHTML = '<h1>host</h1><p class="tag">Live system stats for the hub and every connected agent.</p><p class="empty">No hosts yet.</p>';
+      el.innerHTML = '<h1>host</h1><p class="tag">Stats about the host of this panel</p><p class="empty">No hosts yet.</p>';
       return;
     }
     el.innerHTML =
-      '<h1>host</h1><p class="tag">Live system stats for the hub and every connected agent.</p>' +
+      '<h1>host</h1><p class="tag">Stats about the host of this panel</p>' +
       fleet.map(hostCard).join('');
   }
 
@@ -491,7 +551,7 @@
     const fl = $("list");
     fl.innerHTML = "";
     if (!fleet.length || !fleet.some((h) => h.procs.length)) {
-      fl.innerHTML = '<div style="padding:40px 20px;color:var(--dim)">No processes yet. Add one with <span style="color:var(--text)">latch add &lt;name&gt; -- &lt;command&gt;</span>.</div>';
+      fl.innerHTML = '<div style="padding:40px 20px;color:var(--dim)">No processes yet - Add one with <span style="color:var(--text)">latch add &lt;name&gt; -- &lt;command&gt;</span></div>';
       return;
     }
     let idx = 0;
@@ -581,7 +641,7 @@
         '<button class="btn primary" onclick="act(\'reload\')"><span class="g">⟳</span> Reload</button>' +
         startStop +
         '<button class="btn" ' + (h.remote ? 'disabled title="not available for remote agents yet"' : 'onclick="openLogs()"') + '><span class="g">▤</span> Logs</button>' +
-        '<button class="btn danger wide" ' + (h.remote ? 'disabled title="not available for remote agents yet"' : 'onclick="act(\'remove\')"') + '><span class="g">⌦</span> Remove</button>' +
+        '<button class="btn danger wide" onclick="removeClicked(event, \'' + p.name.replace(/'/g, "\\'") + '\')" title="hold shift to skip confirmation"><span class="g">⌦</span> Remove</button>' +
       '</div></div>' +
       git +
       '<div class="d-section" style="border-bottom:none"><div class="d-label">info</div><dl class="kv">' +
@@ -604,7 +664,8 @@
 
   function updateCounts() {
     const all = fleet.flatMap((h) => h.procs);
-    $("c-hosts").textContent = fleet.length;
+    const n = fleet.length;
+    $("c-hosts-wrap").innerHTML = n === 0 ? "no hosts" : "<b>" + n + "</b> host" + (n === 1 ? "" : "s");
     $("c-svc").textContent = all.length;
     $("c-up").textContent = all.filter((p) => p.state === "run").length;
     $("c-down").textContent = all.filter((p) => p.state === "crash" || p.state === "stop").length;
@@ -634,7 +695,11 @@
       if (kind === "start") { await api(actionPath(h, p.name, "start"), { method: "POST" }); markBoot(key); toast("ok", "●", "Started " + p.name); return; }
       if (kind === "restart") { await api(actionPath(h, p.name, "restart"), { method: "POST" }); markBoot(key); toast("ok", "↻", "Restarting " + p.name); return; }
       if (kind === "reload") { await api(actionPath(h, p.name, "reload"), { method: "POST" }); markBoot(key); toast("info", "⟳", "Reloading " + p.name + " - zero gap"); return; }
-      if (kind === "remove") { await api("/processes/" + encodeURIComponent(p.name), { method: "DELETE" }); toast("ok", "⌦", "Removed " + p.name); selKey = null; await refresh(); return; }
+      if (kind === "remove") {
+        if (h.remote) await api(actionPath(h, p.name, "remove"), { method: "POST" });
+        else await api("/processes/" + encodeURIComponent(p.name), { method: "DELETE" });
+        toast("ok", "⌦", "Removed " + p.name); selKey = null; await refresh(); return;
+      }
       if (kind === "pull" || kind === "pullreload") { await doPull(p, h, kind === "pullreload"); return; }
     } catch (err) {
       toast("info", "!", err.message || "action failed");
@@ -733,6 +798,98 @@
     navigator.clipboard.writeText(lines.join("\n")).then(() => toast("ok", "⧉", "Copied " + lines.length + " lines")).catch(() => toast("info", "⧉", "Copy blocked by browser"));
   }
 
+  function openAddProcess() {
+    $("apName").value = "";
+    $("apCommand").value = "";
+    $("apCwd").value = "";
+    $("apPort").value = "";
+    $("apAutorestart").checked = false;
+    $("apErr").style.display = "none";
+    const sel = $("apTarget");
+    sel.innerHTML = fleet.map((h) =>
+      '<option value="' + h.id + '"' + (h.remote && !h.online ? " disabled" : "") + '>' + h.host + (h.remote ? (h.online ? "" : " (offline)") : " (hub)") + '</option>'
+    ).join("");
+    $("ovAddProcess").classList.add("show");
+    $("apName").focus();
+  }
+  function closeAddProcess() { $("ovAddProcess").classList.remove("show"); }
+
+  async function submitAddProcess() {
+    const errEl = $("apErr");
+    errEl.style.display = "none";
+    const name = $("apName").value.trim();
+    const commandLine = $("apCommand").value.trim();
+    const cwd = $("apCwd").value.trim();
+    const port = $("apPort").value.trim();
+    const autorestart = $("apAutorestart").checked;
+    const targetId = $("apTarget").value;
+    if (!name || !commandLine) { errEl.textContent = "Name and command are required."; errEl.style.display = "block"; return; }
+    const parts = commandLine.split(/\s+/);
+    const body = { name, command: parts[0], args: parts.slice(1), autorestart };
+    if (cwd) body.cwd = cwd;
+    if (port) body.port = Number(port);
+    try {
+      const path = targetId === "hub" ? "/processes" : "/agents/" + targetId + "/processes";
+      await api(path, { method: "POST", body: JSON.stringify(body) });
+      toast("ok", "+", "Added " + name);
+      closeAddProcess();
+      await refresh();
+    } catch (err) {
+      errEl.textContent = err.message || "Failed to add process.";
+      errEl.style.display = "block";
+    }
+  }
+
+  function openAddServer() {
+    $("asName").value = "";
+    $("asErr").style.display = "none";
+    $("asResult").innerHTML = "";
+    $("ovAddServer").classList.add("show");
+    $("asName").focus();
+  }
+  function closeAddServer() { $("ovAddServer").classList.remove("show"); }
+
+  async function generateJoinCommand() {
+    const errEl = $("asErr");
+    errEl.style.display = "none";
+    const label = $("asName").value.trim();
+    if (!label) { errEl.textContent = "Name is required."; errEl.style.display = "block"; return; }
+    try {
+      const [hub, tok] = await Promise.all([
+        api("/hub"),
+        api("/tokens", { method: "POST", body: JSON.stringify({ label }) }),
+      ]);
+      const cmd = "latch join https://" + hub.address + ":" + (location.port || 443) + " --token " + tok.token + " --fingerprint " + hub.fingerprint + " --name " + label;
+      $("asResult").innerHTML = '<div class="join-cmd" id="joinCmdText"></div><button class="btn wide" onclick="copyJoinCommand()"><span class="g">⧉</span> Copy command</button>';
+      $("joinCmdText").textContent = cmd;
+    } catch (err) {
+      errEl.textContent = err.message || "Failed to generate token.";
+      errEl.style.display = "block";
+    }
+  }
+  function copyJoinCommand() {
+    const text = $("joinCmdText").textContent;
+    navigator.clipboard.writeText(text).then(() => toast("ok", "⧉", "Copied join command")).catch(() => toast("info", "⧉", "Copy blocked by browser"));
+  }
+
+  let confirmResolve = null;
+  function openConfirm(title, msg) {
+    $("cfTitle").textContent = title;
+    $("cfMsg").textContent = msg;
+    $("ovConfirm").classList.add("show");
+    return new Promise((resolve) => { confirmResolve = resolve; });
+  }
+  function closeConfirm(result) {
+    $("ovConfirm").classList.remove("show");
+    if (confirmResolve) { confirmResolve(!!result); confirmResolve = null; }
+  }
+
+  async function removeClicked(e, name) {
+    if (e.shiftKey) { act("remove"); return; }
+    const ok = await openConfirm("Remove process", 'Remove "' + name + '"? This stops it and deletes its config.');
+    if (ok) act("remove");
+  }
+
   function openKeys() { $("ovKeys").classList.add("show"); }
   function closeKeys() { $("ovKeys").classList.remove("show"); }
 
@@ -753,7 +910,7 @@
     const list = filtered(q);
     if (pSel >= list.length) pSel = list.length - 1;
     if (pSel < 0) pSel = 0;
-    const el = $("pList");
+    const el = $("pList");VideoColorSpace
     el.innerHTML = "";
     const p = selProc();
     list.forEach((c, i) => {
@@ -776,6 +933,9 @@
       return;
     }
     if ($("ovKeys").classList.contains("show")) { if (e.key === "q" || e.key === "Escape") { e.preventDefault(); closeKeys(); } return; }
+    if ($("ovAddProcess").classList.contains("show")) { if (e.key === "Escape") { e.preventDefault(); closeAddProcess(); } return; }
+    if ($("ovAddServer").classList.contains("show")) { if (e.key === "Escape") { e.preventDefault(); closeAddServer(); } return; }
+    if ($("ovConfirm").classList.contains("show")) { if (e.key === "Escape") { e.preventDefault(); closeConfirm(false); } else if (e.key === "Enter") { e.preventDefault(); closeConfirm(true); } return; }
     if ($("ovLogs").classList.contains("show")) { if (e.key === "q" || e.key === "Escape") { e.preventDefault(); closeLogs(); } else if (e.key === "c") { e.preventDefault(); copyLogs(); } return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; }
     if (e.key === "?") { e.preventDefault(); openKeys(); return; }

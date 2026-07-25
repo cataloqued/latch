@@ -40,15 +40,52 @@ function layout(title, body) {
 </html>`;
 }
 
-function pairPage({ error } = {}) {
+function pairPage() {
   return layout('Pair this browser', `
     <h1>latch</h1>
     <p class="sub">Enter the one-time code shown on the server (re-SSH in if you have misplaced the code)</p>
-    <form method="post" action="/api/pair">
-      <input name="code" placeholder="XXXX-XXXX" autofocus autocomplete="off" />
-      <button type="submit">Pair</button>
+    <form id="f">
+      <input name="code" id="code" placeholder="XXXX-XXXX" autofocus autocomplete="off" />
+      <button type="submit" id="btn">Pair</button>
     </form>
-    ${error ? `<p class="error">${error}</p>` : ''}
+    <p class="error" id="err" style="display:none"></p>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const pre = params.get('code');
+      if (pre) document.getElementById('code').value = pre.toUpperCase();
+
+      async function submit(code) {
+        const btn = document.getElementById('btn');
+        const err = document.getElementById('err');
+        err.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = 'Pairing…';
+        try {
+          const res = await fetch('/api/pair', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code }),
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || 'Pairing failed');
+          }
+          location.href = '/';
+        } catch (e) {
+          err.textContent = e.message;
+          err.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Pair';
+        }
+      }
+
+      document.getElementById('f').addEventListener('submit', (e) => {
+        e.preventDefault();
+        submit(document.getElementById('code').value.trim().toUpperCase());
+      });
+
+      if (pre) submit(pre.toUpperCase());
+    </script>
   `);
 }
 

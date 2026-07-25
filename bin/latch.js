@@ -1,4 +1,4 @@
-
+#!/usr/bin/env node
 const { Command } = require('commander');
 const config = require('../src/core/config');
 const store = require('../src/core/store');
@@ -19,21 +19,27 @@ program
   .action(async () => {
     const { start } = require('../src/hub/server');
     const pairing = require('../src/core/pairing');
+    const { promptOpenBrowser } = require('../src/cli/openBrowser');
     start();
 
     const addr = primaryAddress();
     const base = `https://${addr}:${config.hubPort}`;
     const hasSessions = Object.keys(store.read().sessions).length > 0;
 
-    console.log(`Latch is up on ${base}`);
+    console.log(``);
     if (!hasSessions) {
       const { code } = pairing.issue();
+      const link = `${base}/pair?code=${code}`;
       console.log('');
-      console.log('No paired browser yet. Pair one now:');
-      console.log(`  ${base}/pair`);
-      console.log(`  code: ${code}`);
+      console.log('Open this link to use pair and use Latch');
+      console.log('');
+      console.log(`  ${link}`);
+      console.log('');
+      console.log('');
+      console.log(`  (use ${code}) at ${base}/pair if you want to use Latch on another device`);
       console.log('');
       console.log("(this also prints on SSH login once you run `latch hook install`)");
+      promptOpenBrowser(link);
     }
   });
 
@@ -44,8 +50,16 @@ program
     try {
       const { code, expiresAt } = await localApi.get('/pairing-code');
       const addr = primaryAddress();
-      console.log(`  https://${addr}:${config.hubPort}/pair`);
-      if (code) console.log(`  code: ${code}  (expires ${new Date(expiresAt).toLocaleTimeString()})`);
+      const base = `https://${addr}:${config.hubPort}`;
+      if (code) {
+        const link = `${base}/pair?code=${code}`;
+        console.log(`  ${link}`);
+        console.log(`  (expires ${new Date(expiresAt).toLocaleTimeString()} - or enter code ${code} manually)`);
+        const { promptOpenBrowser } = require('../src/cli/openBrowser');
+        promptOpenBrowser(link);
+      } else {
+        console.log(`  ${base}/pair`);
+      }
     } catch {
       console.error('Could not reach the hub Is it running? Start it with `latch up`.');
       process.exitCode = 1;
@@ -133,7 +147,7 @@ program
   .action(async () => {
     const rows = await localApi.get('/processes');
     if (!rows.length) {
-      console.log('No processes yet. Add one with `latch add <name> <command...>`.');
+      console.log('No processes yet. Add one with `latch add <name> <command>`.');
       return;
     }
     for (const p of rows) {
@@ -144,21 +158,22 @@ program
 program
   .command('add <name> <command...>')
   .description('register a new managed process, e.g. `latch add web --autorestart --port 3000 -- node server.js`')
+  .option('--agent <id>', 'create this process on a connected agent instead of the local hub')
   .allowUnknownOption()
-  .action(async (name, command) => {
+  .action(async (name, command, opts) => {
     const autorestart = command.includes('--autorestart');
     const portIdx = command.indexOf('--port');
     const port = portIdx !== -1 ? command[portIdx + 1] : undefined;
     const rest = command.filter((t, i) => t !== '--autorestart' && (portIdx === -1 || (i !== portIdx && i !== portIdx + 1)));
     const argv = rest[0] === '--' ? rest.slice(1) : rest;
-    await localApi.post('/processes', {
-      name,
-      command: argv[0],
-      args: argv.slice(1),
-      autorestart,
-      port,
-    });
-    console.log(`Added "${name}". Start it with \`latch start ${name}\`.`);
+    const body = { name, command: argv[0], args: argv.slice(1), autorestart, port };
+    if (opts.agent) {
+      await localApi.post(`/agents/${encodeURIComponent(opts.agent)}/processes`, body);
+      console.log(`Added "${name}" on agent ${opts.agent}.`);
+    } else {
+      await localApi.post('/processes', body);
+      console.log(`Added "${name}". Start it with \`latch start ${name}\`.`);
+    }
   });
 
 const PAST_TENSE = { start: 'started', stop: 'stopped', restart: 'restarted', reload: 'reloaded' };

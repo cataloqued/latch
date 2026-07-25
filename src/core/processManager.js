@@ -86,13 +86,23 @@ function start(name) {
   if (running.has(name) && running.get(name).child) return status(name);
 
   const entry = running.get(name) || { logBuffer: [], restarts: 0 };
-  const child = spawnChild(proc);
-  entry.child = child;
-  entry.startedAt = Date.now();
-  entry.status = 'running';
-  running.set(name, entry);
-
-  wireLifecycle(name, child, entry, proc);
+  // spawn() can throw synchronously on Windows (e.g. EFTYPE for a non-executable
+  // command) - this must never escape uncaught, since start() also runs from bare
+  // setTimeout callbacks (autorestart retries) with no caller to catch it
+  try {
+    const child = spawnChild(proc);
+    entry.child = child;
+    entry.startedAt = Date.now();
+    entry.status = 'running';
+    running.set(name, entry);
+    wireLifecycle(name, child, entry, proc);
+  } catch (err) {
+    entry.child = null;
+    entry.status = 'stopped';
+    entry.lastError = err.message;
+    running.set(name, entry);
+    appendLog(name, `[latch] failed to start: ${err.message}\n`);
+  }
   return status(name);
 }
 

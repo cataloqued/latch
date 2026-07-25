@@ -924,6 +924,18 @@
     text-align: center;
   }
 
+  .ap-preview {
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    padding: 10px 12px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--dim);
+    margin-bottom: 14px;
+  }
+  .ap-preview b { color: var(--text); font-weight: 500; }
+  .ap-preview .warn { color: var(--amber); }
+
   .logbox {
     position: absolute;
     inset: 6vh 6vw;
@@ -1199,19 +1211,20 @@
     <div class="modal-head"><span class="t">add process</span><button class="btn"
         style="margin-left:auto;padding:4px 10px" onclick="closeAddProcess()">close <kbd>esc</kbd></button></div>
     <div class="modal-body">
-      <div class="field"><label>name</label><input id="apName" placeholder="worker" spellcheck="false"
-          autocomplete="off" /></div>
+      <div class="field"><label>server</label><select id="apTarget"></select></div>
+      <div class="field"><label>working directory <span style="opacity:.6">(the folder your command runs in)</span></label><input id="apCwd"
+          placeholder="/home/you/app" spellcheck="false" autocomplete="off" /></div>
       <div class="field"><label>command</label><input id="apCommand" placeholder="node server.js" spellcheck="false"
           autocomplete="off" /></div>
       <div class="field-row">
-        <div class="field"><label>working dir <span style="opacity:.6">(optional)</span></label><input id="apCwd"
-            placeholder="/home/you/app" spellcheck="false" autocomplete="off" /></div>
+        <div class="field"><label>name <span style="opacity:.6">(optional)</span></label><input id="apName" placeholder="defaults from the command" spellcheck="false"
+            autocomplete="off" /></div>
         <div class="field"><label>port <span style="opacity:.6">(optional)</span></label><input id="apPort"
             placeholder="3000" inputmode="numeric" /></div>
       </div>
-      <div class="field"><label>run on</label><select id="apTarget"></select></div>
       <div class="field"><label class="field-check"><input id="apAutorestart" type="checkbox" style="width:auto" />
           autorestart on crash</label></div>
+      <div class="ap-preview" id="apPreview"></div>
       <div class="modal-err" id="apErr" style="display:none"></div>
       <button class="btn primary wide" onclick="submitAddProcess()"><span class="g">+</span> Add process</button>
     </div>
@@ -1708,6 +1721,38 @@
     navigator.clipboard.writeText(lines.join("\n")).then(() => toast("ok", "⧉", "Copied " + lines.length + " lines")).catch(() => toast("info", "⧉", "Copy blocked by browser"));
   }
 
+  const AP_INTERPRETERS = { js: "node", mjs: "node", cjs: "node", py: "python", rb: "ruby", sh: "bash" };
+
+  function resolveApCommand(commandLine) {
+    const parts = commandLine.trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return { command: "", args: [] };
+    let [command, ...args] = parts;
+    const ext = command.includes(".") ? command.split(".").pop().toLowerCase() : "";
+    if (AP_INTERPRETERS[ext]) { args = [command, ...args]; command = AP_INTERPRETERS[ext]; }
+    return { command, args };
+  }
+
+  function updateApPreview() {
+    const commandLine = $("apCommand").value.trim();
+    const cwd = $("apCwd").value.trim();
+    const targetId = $("apTarget").value;
+    const targetOpt = $("apTarget").selectedOptions[0];
+    const serverLabel = targetOpt ? targetOpt.textContent : "-";
+    const { command, args } = resolveApCommand(commandLine);
+    const resolved = command ? [command, ...args].join(" ") : "-";
+    const firstToken = commandLine.split(/\s+/)[0] || "";
+    const baseName = firstToken.split(/[\\/]/).pop().replace(/\.[^.]+$/, "");
+    const nameField = $("apName").value.trim();
+    const name = nameField || baseName || "-";
+    const cwdLine = cwd
+      ? "<b>" + cwd + "</b>"
+      : '<span class="warn">not set - required, pick the exact folder</span>';
+    $("apPreview").innerHTML =
+      "will run  <b>" + (resolved || "-") + "</b>  as  <b>" + name + "</b><br>" +
+      "in&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; " + cwdLine + "<br>" +
+      "on&nbsp;&nbsp;&nbsp;&nbsp; <b>" + serverLabel + "</b>";
+  }
+
   function openAddProcess() {
     $("apName").value = "";
     $("apCommand").value = "";
@@ -1719,24 +1764,27 @@
     sel.innerHTML = fleet.map((h) =>
       '<option value="' + h.id + '"' + (h.remote && !h.online ? " disabled" : "") + '>' + h.host + (h.remote ? (h.online ? "" : " (offline)") : " (hub)") + '</option>'
     ).join("");
+    updateApPreview();
     $("ovAddProcess").classList.add("show");
-    $("apName").focus();
+    $("apTarget").focus();
   }
   function closeAddProcess() { $("ovAddProcess").classList.remove("show"); }
 
   async function submitAddProcess() {
     const errEl = $("apErr");
     errEl.style.display = "none";
-    const name = $("apName").value.trim();
     const commandLine = $("apCommand").value.trim();
     const cwd = $("apCwd").value.trim();
     const port = $("apPort").value.trim();
     const autorestart = $("apAutorestart").checked;
     const targetId = $("apTarget").value;
-    if (!name || !commandLine) { errEl.textContent = "Name and command are required."; errEl.style.display = "block"; return; }
-    const parts = commandLine.split(/\s+/);
-    const body = { name, command: parts[0], args: parts.slice(1), autorestart };
-    if (cwd) body.cwd = cwd;
+    if (!commandLine) { errEl.textContent = "Command is required."; errEl.style.display = "block"; return; }
+    if (!cwd) { errEl.textContent = "Working directory is required - pick the exact folder this should run from."; errEl.style.display = "block"; return; }
+    const { command, args } = resolveApCommand(commandLine);
+    const firstToken = commandLine.trim().split(/\s+/)[0] || command;
+    const baseName = firstToken.split(/[\\/]/).pop().replace(/\.[^.]+$/, "");
+    const name = $("apName").value.trim() || baseName || command;
+    const body = { name, command, args, autorestart, cwd };
     if (port) body.port = Number(port);
     try {
       const path = targetId === "hub" ? "/processes" : "/agents/" + targetId + "/processes";
@@ -1913,10 +1961,24 @@
   wireBackdropClose("ovAddServer", closeAddServer);
   wireBackdropClose("ovConfirm", () => closeConfirm(false));
 
+  ["apCommand", "apCwd", "apTarget", "apName"].forEach((id) => {
+    $(id).addEventListener("input", updateApPreview);
+    $(id).addEventListener("change", updateApPreview);
+  });
+
   async function refresh() {
     if (shuttingDown) return;
     try {
       fleet = await fetchFleet();
+      if (waitingForAgentLabel) {
+        const newAgent = fleet.find((h) => h.remote && h.online && !waitingForAgentSeenIds.has(h.id));
+        if (newAgent) {
+          waitingForAgentLabel = null;
+          waitingForAgentSeenIds = null;
+          closeAddServer();
+          toast("ok", "▹", newAgent.host + " connected");
+        }
+      }
       render();
     } catch (err) {
       if (err.message !== "unauthorized") toast("info", "!", "Couldn't reach hub - retrying");

@@ -84,13 +84,14 @@ program
     console.log(`Latch is up on ${base} (pid ${pid}, running in the background)`);
     console.log(`Logs: ${daemon.logFile('hub')}`);
     console.log('Use `latch kill` to stop it, `latch status` to check on it.');
+    console.log('');
 
+    let link = base;
     if (!hasSessions) {
       // the daemon just booted in its own process - ask it for the pairing code
       // it actually issued, rather than generating one here that it would never see
       const { code } = await localApi.get('/pairing-code');
-      const link = `${base}/pair?code=${code}`;
-      console.log('');
+      link = `${base}/pair?code=${code}`;
       console.log(underline('Open this link to pair and use Latch:'));
       console.log(`  ${link}`);
       console.log('');
@@ -98,8 +99,12 @@ program
       console.log(`  (use code ${code} at ${base}/pair if you want to use Latch on another device)`);
       console.log('');
       console.log("(the link also prints on SSH login once you run `latch hook install`)");
-      promptOpenBrowser(link);
+    } else {
+      console.log(underline('Open Latch in your browser:'));
+      console.log(`  ${link}`);
     }
+    console.log('');
+    promptOpenBrowser(link);
   });
 
 program

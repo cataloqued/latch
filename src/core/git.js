@@ -65,7 +65,7 @@ async function link(cwd, url) {
       return info(cwd);
     }
   }
-  throw new Error('cwd has existing content and is not a git repository — link manually');
+  throw new Error('cwd has existing content and is not a git repository - link manually');
 }
 
 module.exports = { info, pull, link, isRepo };

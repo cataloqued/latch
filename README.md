@@ -64,7 +64,7 @@ Open the URL in your browser, enter the code, and your device is paired.
 Existing tools force users into a trap. Latch does everything, no sign-in or billing required.
 
 - **PM2** is great but single-host, Node and CLI only
-- **Portainer / Coolify / Dokploy** are heavyweight — full PaaS platforms when all you wanted was to see and edit your processes
+- **Portainer / Coolify / Dokploy** are heavyweight - full PaaS platforms when all you wanted was to see and edit your processes
 - **pm2.io** is paid whilst seeing all of your data
 
 Latch is the best of all worlds

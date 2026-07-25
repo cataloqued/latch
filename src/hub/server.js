@@ -12,6 +12,7 @@ const pages = require('./pages');
 const { attachAgentServer } = require('../agent/hubSide');
 
 const PANEL_PATH = path.join(__dirname, 'public', 'panel.html');
+const ICON_FILES = ['favicon.ico', 'favicon-32.png', 'apple-touch-icon.png', 'icon-512.png'];
 
 function isLoopback(req) {
   return req.socket.remoteAddress === '127.0.0.1' || req.socket.remoteAddress === '::1' || req.socket.remoteAddress === '::ffff:127.0.0.1';
@@ -30,6 +31,9 @@ function createApp() {
   const app = express();
 
   app.get('/pair', (_req, res) => res.send(pages.pairPage()));
+  ICON_FILES.forEach((file) => {
+    app.get('/' + file, (_req, res) => res.sendFile(path.join(__dirname, 'public', file)));
+  });
   app.use('/api', api);
   app.use('/internal', requireLoopback, internal);
   app.get('*', (req, res) => {

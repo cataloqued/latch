@@ -1,4 +1,7 @@
 <title>Latch</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <style>
   :root {
     --bg: #0a0e13; --panel: #0e141b; --panel-2: #0c1219; --rule: #1b2530;
@@ -44,6 +47,7 @@
   .host-meta .role { color: var(--faint); text-transform: uppercase; letter-spacing: 0.06em; font-size: 12px; }
   .host-meta .net { color: var(--cyan); opacity: 0.8; }
   .host-online { color: var(--green); }
+  .host-sys { padding: 4px 0 8px; color: var(--dim); font-size: 12.5px; letter-spacing: 0.02em; }
 
   .rows { padding: 4px 0; }
   .row { display: grid; grid-template-columns: 2.5ch 17ch 7ch 8ch 1fr 6ch 3ch; align-items: center; gap: 1ch; padding: 4px 8px; margin: 0 -8px; cursor: pointer; border-left: 2px solid transparent; }
@@ -119,6 +123,24 @@
   .about .green { color: var(--green); }
   .about .links { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 
+  .hcard { padding: 18px 0; border-top: 1px solid var(--rule); }
+  .hcard:first-child { border-top: none; padding-top: 0; }
+  .hcard-head { display: flex; align-items: baseline; gap: 1.5ch; margin-bottom: 12px; }
+  .hcard-head .name { color: var(--text); font-weight: 600; font-size: 15px; }
+  .hcard-head .role { color: var(--faint); text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; }
+  .hcard-head .online { color: var(--green); margin-left: auto; font-size: 12px; }
+  .hcard-head .offline { color: var(--dim); margin-left: auto; font-size: 12px; }
+  .hrow { display: grid; grid-template-columns: 10ch 1fr 8ch; align-items: center; gap: 1.5ch; padding: 3px 0; font-size: 12.5px; }
+  .hrow .k { color: var(--dim); }
+  .hrow .v { color: var(--text); text-align: right; }
+  .hbar-track { height: 5px; background: var(--rule); position: relative; }
+  .hbar-fill { height: 100%; background: var(--green); }
+  .hbar-fill.warn { background: var(--amber); }
+  .hbar-fill.crit { background: var(--red); }
+  .hmeta { color: var(--dim); font-size: 12.5px; margin-bottom: 10px; }
+  .hmeta .gpuname { color: var(--cyan); }
+  .hcard .empty { color: var(--dim); font-size: 12.5px; }
+
   .cmdline { flex: 0 0 auto; display: flex; align-items: center; gap: 1ch; padding: 11px 20px; border-top: 1px solid var(--rule); background: var(--panel); }
   .prompt { color: var(--green); }
   .cmdline input { flex: 1; background: none; border: none; outline: none; color: var(--text); font: inherit; caret-color: var(--green); }
@@ -174,6 +196,7 @@
   <span class="brand">latch</span>
   <nav class="nav">
     <button class="navbtn active" id="nav-fleet" onclick="showView('fleet')">fleet</button>
+    <button class="navbtn" id="nav-host" onclick="showView('host')">host</button>
     <button class="navbtn" id="nav-about" onclick="showView('about')">about</button>
   </nav>
   <span class="counts" id="counts">
@@ -192,25 +215,26 @@
   <div class="detail" id="detail"></div>
 </div>
 
+<div class="about" id="view-host" style="display:none">
+  <div class="about-inner" id="hostBody"></div>
+</div>
+
 <div class="about" id="view-about" style="display:none">
   <div class="about-inner">
     <h1>latch</h1>
-    <p class="tag">A self-hosted panel to view and manage all your instances across systems.</p>
+    <p class="tag"></p>
 
     <section>
       <div class="lbl">open source</div>
-      <p><span class="green">AGPL-3.0</span> · free forever · self-hosted only.</p>
-      <p>No Latch cloud. Your browser talks to your box — nothing passes through us, because there is no us to pass through.</p>
+      <p><span class="green">AGPL-3.0</span> · free and self-hosted only</p>
+      <p>No Latch cloud. Your browser just talks to your server - nothing goes through us, because there is no us.</p>
     </section>
 
-    <section>
-      <div class="lbl">why it exists</div>
-      <p>PM2 is single-host. Portainer and Coolify are whole platforms. Latch is the missing middle — one panel over every VPS you own, runtime-agnostic, no third party in the loop.</p>
-    </section>
+   
 
     <section>
-      <div class="lbl">how trust works</div>
-      <p>If you can SSH into the box, you can control it. If you can't, you can't. Pairing is an SSH-gated one-time code — no passwords to leak.</p>
+      <div class="lbl">trust in the community</div>
+      <p>If you can SSH in, you can manage it. If you can't, you can't. Latch is a new SSH - no passwords to leak.</p>
     </section>
 
     <section>
@@ -303,6 +327,88 @@
     return m + "m " + (s % 60) + "s";
   }
 
+  function fmtBytes(n) {
+    if (n == null) return "-";
+    const gb = n / 1073741824;
+    if (gb >= 1) return gb.toFixed(1) + "G";
+    return Math.round(n / 1048576) + "M";
+  }
+
+  function fmtDuration(s) {
+    if (s == null) return "-";
+    s = Math.floor(s);
+    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+    if (d > 0) return d + "d " + h + "h";
+    if (h > 0) return h + "h " + m + "m";
+    return m + "m";
+  }
+
+  function sysLine(sys) {
+    if (!sys) return "";
+    const disk = (sys.disks || []).slice().sort((a, b) => b.total - a.total)[0];
+    const parts = [
+      sys.cpu ? sys.cpu.usagePercent + "% cpu (" + sys.cpu.cores + "c)" : null,
+      sys.mem ? fmtBytes(sys.mem.used) + "/" + fmtBytes(sys.mem.total) + " ram" : null,
+      disk ? fmtBytes(disk.free) + " free" : null,
+      sys.gpus && sys.gpus.length ? sys.gpus[0].usagePercent + "% gpu" : null,
+      sys.uptimeSeconds != null ? "up " + fmtDuration(sys.uptimeSeconds) : null,
+    ].filter(Boolean);
+    return parts.length ? '<div class="host-sys">' + parts.join("  ·  ") + "</div>" : "";
+  }
+
+  function barClass(pct) {
+    if (pct >= 90) return "crit";
+    if (pct >= 70) return "warn";
+    return "";
+  }
+
+  function hbar(pct) {
+    return '<div class="hbar-track"><div class="hbar-fill ' + barClass(pct) + '" style="width:' + Math.min(100, Math.max(0, pct)) + '%"></div></div>';
+  }
+
+  function hostCard(h) {
+    const head =
+      '<div class="hcard-head"><span class="name">' + h.host + '</span>' +
+      '<span class="role">' + h.role + '</span>' +
+      '<span class="' + (h.online ? "online" : "offline") + '">' + (h.online ? "online" : "offline") + '</span></div>';
+
+    if (!h.sys) {
+      return '<div class="hcard">' + head + '<p class="empty">No stats reported yet.</p></div>';
+    }
+    const s = h.sys;
+    const memPct = s.mem ? Math.round((s.mem.used / s.mem.total) * 100) : 0;
+    const meta = '<div class="hmeta">' + s.platform + ' ' + s.arch + '  ·  ' + s.cpu.model + '</div>';
+
+    let rows = '';
+    if (s.cpu) {
+      rows += '<div class="hrow"><span class="k">cpu</span>' + hbar(s.cpu.usagePercent) + '<span class="v">' + s.cpu.usagePercent + '% / ' + s.cpu.cores + 'c</span></div>';
+    }
+    if (s.mem) {
+      rows += '<div class="hrow"><span class="k">ram</span>' + hbar(memPct) + '<span class="v">' + fmtBytes(s.mem.used) + '/' + fmtBytes(s.mem.total) + '</span></div>';
+    }
+    (s.disks || []).forEach((d) => {
+      const pct = Math.round((d.used / d.total) * 100);
+      rows += '<div class="hrow"><span class="k">' + d.mount + '</span>' + hbar(pct) + '<span class="v">' + fmtBytes(d.used) + '/' + fmtBytes(d.total) + '</span></div>';
+    });
+    (s.gpus || []).forEach((g) => {
+      rows += '<div class="hrow"><span class="k gpuname" title="' + g.name + '">gpu</span>' + hbar(g.usagePercent) + '<span class="v">' + g.usagePercent + '%</span></div>';
+    });
+    rows += '<div class="hrow"><span class="k">uptime</span><span></span><span class="v">' + fmtDuration(s.uptimeSeconds) + '</span></div>';
+
+    return '<div class="hcard">' + head + meta + rows + '</div>';
+  }
+
+  function renderHost() {
+    const el = $("hostBody");
+    if (!fleet.length) {
+      el.innerHTML = '<h1>host</h1><p class="tag">Live system stats for the hub and every connected agent.</p><p class="empty">No hosts yet.</p>';
+      return;
+    }
+    el.innerHTML =
+      '<h1>host</h1><p class="tag">Live system stats for the hub and every connected agent.</p>' +
+      fleet.map(hostCard).join('');
+  }
+
   function toDisplayProc(raw, hostId) {
     const key = hostId + ":" + raw.name;
     let state = raw.status === "running" ? "run" : "stop";
@@ -328,12 +434,12 @@
     ]);
     const hubHost = {
       id: "hub", host: hub.hostname, role: "hub", net: hub.address || "",
-      online: true, remote: false,
+      online: true, remote: false, sys: hub.host || null,
       procs: procs.map((p) => toDisplayProc(p, "hub")),
     };
     const agentHosts = agents.map((a) => ({
       id: a.id, host: a.name, role: "agent", net: "",
-      online: a.online, remote: true,
+      online: a.online, remote: true, sys: a.host || null,
       procs: (a.processes || []).map((p) => toDisplayProc(p, a.id)),
     }));
     return [hubHost, ...agentHosts];
@@ -355,17 +461,20 @@
   function detailText(p) {
     if (p.state === "crash") return p.exit || "crashed";
     if (p.state === "boot") return "restarting…";
-    if (p.state === "stop") return "—";
-    return p.up ? "up " + p.up : "—";
+    if (p.state === "stop") return "-";
+    return p.up ? "up " + p.up : "-";
   }
 
   function showView(v) {
     currentView = v;
     $("view-fleet").style.display = v === "fleet" ? "flex" : "none";
+    $("view-host").style.display = v === "host" ? "block" : "none";
     $("view-about").style.display = v === "about" ? "block" : "none";
     $("counts").style.visibility = v === "fleet" ? "visible" : "hidden";
     $("nav-fleet").classList.toggle("active", v === "fleet");
+    $("nav-host").classList.toggle("active", v === "host");
     $("nav-about").classList.toggle("active", v === "about");
+    if (v === "host") renderHost();
   }
 
   function render() {
@@ -375,6 +484,7 @@
     renderList();
     renderDetail();
     updateCounts();
+    if (currentView === "host") renderHost();
   }
 
   function renderList() {
@@ -392,7 +502,8 @@
         '<div class="host-head"><span class="host-name">' + h.host + '</span>' +
         '<span class="host-meta"><span class="role">' + h.role + '</span>' +
         '<span class="host-online">' + (h.online ? "online" : "offline") + '</span>' +
-        (h.net ? '<span class="net">' + h.net + '</span>' : '') + '</span></div>';
+        (h.net ? '<span class="net">' + h.net + '</span>' : '') + '</span></div>' +
+        sysLine(h.sys);
       const rows = document.createElement("div");
       rows.className = "rows";
       h.procs.forEach((p) => {
@@ -453,9 +564,9 @@
       } else {
         git =
           '<div class="d-section" id="gitSection"><div class="d-label">git</div>' +
-            '<div class="no-repo">No repo linked — paste a URL to enable pull:</div>' +
+            '<div class="no-repo">No repo linked - paste your repo to link</div>' +
             '<div class="link-form">' +
-              '<input id="repoInput" placeholder="github.com/you/app" spellcheck="false" autocomplete="off" />' +
+              '<input id="repoInput" placeholder="github.com/you/repo" spellcheck="false" autocomplete="off" />' +
               '<button class="btn primary" onclick="linkRepo()"><span class="g">◆</span> Link</button>' +
             '</div></div>';
       }
@@ -474,9 +585,9 @@
       '</div></div>' +
       git +
       '<div class="d-section" style="border-bottom:none"><div class="d-label">info</div><dl class="kv">' +
-        '<dt>pid</dt><dd>' + (p.pid || "—") + '</dd>' +
-        '<dt>port</dt><dd>' + (p.port ? '<span style="color:var(--cyan)">:' + p.port + '</span>' : "—") + '</dd>' +
-        '<dt>uptime</dt><dd>' + (p.up || "—") + '</dd>' +
+        '<dt>pid</dt><dd>' + (p.pid || "-") + '</dd>' +
+        '<dt>port</dt><dd>' + (p.port ? '<span style="color:var(--cyan)">:' + p.port + '</span>' : "-") + '</dd>' +
+        '<dt>uptime</dt><dd>' + (p.up || "-") + '</dd>' +
         '<dt>restarts</dt><dd>' + p.restarts + '</dd>' +
         '<dt>cmd</dt><dd>' + p.cmd + '</dd></dl></div>';
   }
@@ -522,7 +633,7 @@
       if (kind === "stop") { await api(actionPath(h, p.name, "stop"), { method: "POST" }); toast("ok", "⏹", "Stopped " + p.name); await refresh(); return; }
       if (kind === "start") { await api(actionPath(h, p.name, "start"), { method: "POST" }); markBoot(key); toast("ok", "●", "Started " + p.name); return; }
       if (kind === "restart") { await api(actionPath(h, p.name, "restart"), { method: "POST" }); markBoot(key); toast("ok", "↻", "Restarting " + p.name); return; }
-      if (kind === "reload") { await api(actionPath(h, p.name, "reload"), { method: "POST" }); markBoot(key); toast("info", "⟳", "Reloading " + p.name + " — zero gap"); return; }
+      if (kind === "reload") { await api(actionPath(h, p.name, "reload"), { method: "POST" }); markBoot(key); toast("info", "⟳", "Reloading " + p.name + " - zero gap"); return; }
       if (kind === "remove") { await api("/processes/" + encodeURIComponent(p.name), { method: "DELETE" }); toast("ok", "⌦", "Removed " + p.name); selKey = null; await refresh(); return; }
       if (kind === "pull" || kind === "pullreload") { await doPull(p, h, kind === "pullreload"); return; }
     } catch (err) {
@@ -553,7 +664,7 @@
     try {
       const info = await api("/processes/" + encodeURIComponent(p.name) + "/pull", { method: "POST" });
       gitCache.set(h.id + ":" + p.name, info);
-      toast("ok", "✓", info.behind > 0 ? "Pulled — now at " + info.hash : "Already up to date");
+      toast("ok", "✓", info.behind > 0 ? "Pulled - now at " + info.hash : "Already up to date");
       renderDetail();
       renderList();
       if (thenReload) await act("reload");
@@ -701,7 +812,7 @@
       fleet = await fetchFleet();
       render();
     } catch (err) {
-      if (err.message !== "unauthorized") toast("info", "!", "Couldn't reach hub — retrying");
+      if (err.message !== "unauthorized") toast("info", "!", "Couldn't reach hub - retrying");
     }
   }
 

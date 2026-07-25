@@ -48,7 +48,9 @@ function attachAgentServer(wss) {
         }
         if (m.type === 'processList') {
           store.mutate((s) => {
-            if (s.agents[agentId]) s.agents[agentId].processes = m.processes;
+            if (!s.agents[agentId]) return;
+            s.agents[agentId].processes = m.processes;
+            s.agents[agentId].host = m.host || null;
           });
         }
       });

@@ -1,6 +1,7 @@
 const WebSocket = require('ws');
 const tls = require('../core/tls');
 const processManager = require('../core/processManager');
+const hostInfo = require('../core/hostInfo');
 
 const REPORT_INTERVAL_MS = 4_000;
 const RECONNECT_BASE_MS = 1000;
@@ -25,7 +26,10 @@ function connect({ hubUrl, token, name, fingerprint }) {
       }
     });
 
-    const reportList = () => ws.send(JSON.stringify({ type: 'processList', processes: processManager.list() }));
+    const reportList = async () => {
+      const host = await hostInfo.snapshot();
+      if (ws.readyState === ws.OPEN) ws.send(JSON.stringify({ type: 'processList', processes: processManager.list(), host }));
+    };
 
     ws.on('open', () => {
       attempt = 0;

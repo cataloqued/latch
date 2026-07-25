@@ -4,7 +4,10 @@ function layout(title, body) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${title} — Latch</title>
+  <title>${title}  Latch</title>
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <style>
     :root { --bg: #0a0e13; --panel: #0e141b; --rule: #1b2530; --text: #cdd6df; --dim: #5c6875; --green: #3fb950; --green-dk: #2ea043; --red: #f85149; }
     * { box-sizing: border-box; }
@@ -40,7 +43,7 @@ function layout(title, body) {
 function pairPage({ error } = {}) {
   return layout('Pair this browser', `
     <h1>latch</h1>
-    <p class="sub">Enter the one-time code shown on the server (SSH into the box to see it again).</p>
+    <p class="sub">Enter the one-time code shown on the server (re-SSH in if you have misplaced the code)</p>
     <form method="post" action="/api/pair">
       <input name="code" placeholder="XXXX-XXXX" autofocus autocomplete="off" />
       <button type="submit">Pair</button>

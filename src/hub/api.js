@@ -4,6 +4,7 @@ const pairing = require('../core/pairing');
 const sessions = require('../core/sessions');
 const processManager = require('../core/processManager');
 const git = require('../core/git');
+const hostInfo = require('../core/hostInfo');
 const store = require('../core/store');
 const { listAgents, sendCommand } = require('../agent/hubSide');
 const { primaryAddress } = require('../cli/net');
@@ -28,8 +29,8 @@ router.get('/session', (req, res) => {
   res.json({ id: req.session.id, label: req.session.label, createdAt: req.session.createdAt });
 });
 
-router.get('/hub', (_req, res) => {
-  res.json({ hostname: os.hostname(), address: primaryAddress() });
+router.get('/hub', async (_req, res) => {
+  res.json({ hostname: os.hostname(), address: primaryAddress(), host: await hostInfo.snapshot() });
 });
 
 router.get('/sessions', (_req, res) => {

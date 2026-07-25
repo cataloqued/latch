@@ -80,7 +80,7 @@ tokenCmd
     const { cert } = tls.ensureCert();
     const fingerprint = tls.fingerprint(cert.toString());
     const addr = primaryAddress();
-    console.log('API token (shown once — store it securely):');
+    console.log('API token (shown once - store it securely):');
     console.log('');
     console.log(`  ${token}`);
     console.log('');
@@ -233,7 +233,7 @@ program
       fs.writeFileSync(dest, src, { mode: 0o755 });
       console.log(`Installed. New SSH logins will reprint the pairing link. (${dest})`);
     } catch (err) {
-      console.error(`Couldn't write ${dest} — try again with sudo. (${err.message})`);
+      console.error(`Couldn't write ${dest} - try again with sudo. (${err.message})`);
       process.exitCode = 1;
     }
   });
